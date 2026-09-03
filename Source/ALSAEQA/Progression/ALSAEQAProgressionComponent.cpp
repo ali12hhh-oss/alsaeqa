@@ -1,5 +1,38 @@
 #include "Progression/ALSAEQAProgressionComponent.h"
 
+namespace
+{
+    int32 PowerStage(EALSAEQAPower Power)
+    {
+        switch (Power)
+        {
+        case EALSAEQAPower::ThunderSpark:    return 1;
+        case EALSAEQAPower::LightningDash:   return 2;
+        case EALSAEQAPower::ThunderJump:     return 3;
+        case EALSAEQAPower::StormFist:       return 4;
+        case EALSAEQAPower::LightningShield: return 5;
+        case EALSAEQAPower::ThunderEye:      return 6;
+        case EALSAEQAPower::ThunderEcho:     return 7;
+        case EALSAEQAPower::StormSummon:    return 8;
+        default:                             return MAX_int32;
+        }
+    }
+
+    int32 WeaponStage(EALSAEQAWeapon Weapon)
+    {
+        switch (Weapon)
+        {
+        case EALSAEQAWeapon::RustedBlade: return 1;
+        case EALSAEQAWeapon::HunterDagger: return 2;
+        case EALSAEQAWeapon::IronSpear:    return 3;
+        case EALSAEQAWeapon::ThunderHammer:return 5;
+        case EALSAEQAWeapon::StormSpear:   return 7;
+        case EALSAEQAWeapon::ThunderBlade: return 9;
+        default:                           return MAX_int32;
+        }
+    }
+}
+
 UALSAEQAProgressionComponent::UALSAEQAProgressionComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
@@ -7,7 +40,7 @@ UALSAEQAProgressionComponent::UALSAEQAProgressionComponent()
 
 bool UALSAEQAProgressionComponent::UnlockPower(EALSAEQAPower Power, FName DiscoveryId)
 {
-    if (DiscoveryId.IsNone() || UnlockedPowers.Contains(Power))
+    if (DiscoveryId.IsNone() || UnlockedPowers.Contains(Power) || !IsPowerAvailable(Power))
     {
         return false;
     }
@@ -19,7 +52,7 @@ bool UALSAEQAProgressionComponent::UnlockPower(EALSAEQAPower Power, FName Discov
 
 bool UALSAEQAProgressionComponent::AcquireWeapon(EALSAEQAWeapon Weapon, FName DiscoveryId)
 {
-    if (DiscoveryId.IsNone() || AcquiredWeapons.Contains(Weapon))
+    if (DiscoveryId.IsNone() || AcquiredWeapons.Contains(Weapon) || !IsWeaponAvailable(Weapon))
     {
         return false;
     }
@@ -31,7 +64,7 @@ bool UALSAEQAProgressionComponent::AcquireWeapon(EALSAEQAWeapon Weapon, FName Di
 
 bool UALSAEQAProgressionComponent::AdvanceStage(int32 NewStage)
 {
-    if (NewStage <= CurrentStage)
+    if (NewStage <= CurrentStage || NewStage < 1)
     {
         return false;
     }
@@ -53,12 +86,22 @@ bool UALSAEQAProgressionComponent::HasWeapon(EALSAEQAWeapon Weapon) const
 
 bool UALSAEQAProgressionComponent::IsPowerAvailable(EALSAEQAPower Power) const
 {
-    return HasPower(Power);
+    return CurrentStage >= PowerStage(Power);
 }
 
 bool UALSAEQAProgressionComponent::IsWeaponAvailable(EALSAEQAWeapon Weapon) const
 {
-    return HasWeapon(Weapon);
+    return CurrentStage >= WeaponStage(Weapon);
+}
+
+int32 UALSAEQAProgressionComponent::GetPowerRequiredStage(EALSAEQAPower Power) const
+{
+    return PowerStage(Power);
+}
+
+int32 UALSAEQAProgressionComponent::GetWeaponRequiredStage(EALSAEQAWeapon Weapon) const
+{
+    return WeaponStage(Weapon);
 }
 
 void UALSAEQAProgressionComponent::ResetProgression()
