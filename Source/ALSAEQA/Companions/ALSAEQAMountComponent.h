@@ -5,9 +5,8 @@
 #include "ALSAEQAMountTypes.h"
 #include "ALSAEQAMountComponent.generated.h"
 
-delegate void FALSAEQAMountStateChanged(EALSAEQAMountState NewState);
-
-delegate void FALSAEQAMountChanged(FName MountId, bool bMounted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAMountStateChanged, EALSAEQAMountState, NewState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FALSAEQAMountChanged, FName, MountId, bool, bMounted);
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup=(ALSAEQA), meta=(BlueprintSpawnableComponent))
 class ALSAEQA_API UALSAEQAMountComponent : public UActorComponent
