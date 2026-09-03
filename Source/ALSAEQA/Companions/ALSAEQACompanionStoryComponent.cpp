@@ -26,14 +26,22 @@ bool UALSAEQACompanionStoryComponent::SetState(EALSAEQACompanionStoryState NewSt
 
 bool UALSAEQACompanionStoryComponent::DiscoverFamilyClue(FName ClueId)
 {
+    if (ClueId.IsNone())
+    {
+        return false;
+    }
+
     UWorld* World = GetWorld();
     UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
     UALSAEQASaveManager* SaveManager = GameInstance ? GameInstance->GetSubsystem<UALSAEQASaveManager>() : nullptr;
 
-    // Clues may be discovered before stage 25, but they never start the family search.
+    // Clues are intentionally allowed before stage 25; they never start the family search.
     if (SaveManager && SaveManager->AddFamilyClue(ClueId))
     {
-        Progress.FamilyClueCount = SaveManager->GetCompanionStory().FamilyClueCount;
+        const FALSAEQACompanionStoryProgress SavedProgress = SaveManager->GetCompanionStory();
+        Progress.FamilyClueCount = SavedProgress.FamilyClueCount;
+        Progress.FamilyClueIds = SavedProgress.FamilyClueIds;
+        Progress.State = SavedProgress.State;
         return true;
     }
 
@@ -55,8 +63,21 @@ bool UALSAEQACompanionStoryComponent::DiscoverMemory(FName MemoryId)
 
 bool UALSAEQACompanionStoryComponent::RegisterRescue()
 {
+    if (!SetState(EALSAEQACompanionStoryState::Rescued))
+    {
+        return false;
+    }
+
     ++Progress.RescueCount;
-    return SetState(EALSAEQACompanionStoryState::Rescued);
+    return true;
+}
+
+void UALSAEQACompanionStoryComponent::SetCompanionId(FName NewCompanionId)
+{
+    if (!NewCompanionId.IsNone())
+    {
+        Progress.CompanionId = NewCompanionId;
+    }
 }
 
 bool UALSAEQACompanionStoryComponent::IsFamilySearchUnlocked() const
