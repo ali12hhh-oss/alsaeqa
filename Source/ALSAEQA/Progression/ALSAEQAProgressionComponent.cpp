@@ -13,7 +13,7 @@ namespace
         case EALSAEQAPower::LightningShield: return 5;
         case EALSAEQAPower::ThunderEye:      return 6;
         case EALSAEQAPower::ThunderEcho:     return 7;
-        case EALSAEQAPower::StormSummon:    return 8;
+        case EALSAEQAPower::StormSummon:     return 8;
         default:                             return MAX_int32;
         }
     }
@@ -22,13 +22,13 @@ namespace
     {
         switch (Weapon)
         {
-        case EALSAEQAWeapon::RustedBlade: return 1;
+        case EALSAEQAWeapon::RustedBlade:  return 1;
         case EALSAEQAWeapon::HunterDagger: return 2;
         case EALSAEQAWeapon::IronSpear:    return 3;
         case EALSAEQAWeapon::ThunderHammer:return 5;
         case EALSAEQAWeapon::StormSpear:   return 7;
         case EALSAEQAWeapon::ThunderBlade: return 9;
-        default:                           return MAX_int32;
+        default:                            return MAX_int32;
         }
     }
 }
@@ -40,24 +40,26 @@ UALSAEQAProgressionComponent::UALSAEQAProgressionComponent()
 
 bool UALSAEQAProgressionComponent::UnlockPower(EALSAEQAPower Power, FName DiscoveryId)
 {
-    if (DiscoveryId.IsNone() || UnlockedPowers.Contains(Power) || !IsPowerAvailable(Power))
+    if (DiscoveryId.IsNone() || HasCompletedDiscovery(DiscoveryId) || UnlockedPowers.Contains(Power) || !IsPowerAvailable(Power))
     {
         return false;
     }
 
     UnlockedPowers.Add(Power);
+    CompletedDiscoveryIds.Add(DiscoveryId);
     OnProgressionChanged.ExecuteIfBound();
     return true;
 }
 
 bool UALSAEQAProgressionComponent::AcquireWeapon(EALSAEQAWeapon Weapon, FName DiscoveryId)
 {
-    if (DiscoveryId.IsNone() || AcquiredWeapons.Contains(Weapon) || !IsWeaponAvailable(Weapon))
+    if (DiscoveryId.IsNone() || HasCompletedDiscovery(DiscoveryId) || AcquiredWeapons.Contains(Weapon) || !IsWeaponAvailable(Weapon))
     {
         return false;
     }
 
     AcquiredWeapons.Add(Weapon);
+    CompletedDiscoveryIds.Add(DiscoveryId);
     OnProgressionChanged.ExecuteIfBound();
     return true;
 }
@@ -104,10 +106,16 @@ int32 UALSAEQAProgressionComponent::GetWeaponRequiredStage(EALSAEQAWeapon Weapon
     return WeaponStage(Weapon);
 }
 
+bool UALSAEQAProgressionComponent::HasCompletedDiscovery(FName DiscoveryId) const
+{
+    return !DiscoveryId.IsNone() && CompletedDiscoveryIds.Contains(DiscoveryId);
+}
+
 void UALSAEQAProgressionComponent::ResetProgression()
 {
     CurrentStage = 0;
     UnlockedPowers.Reset();
     AcquiredWeapons.Reset();
+    CompletedDiscoveryIds.Reset();
     OnProgressionChanged.ExecuteIfBound();
 }
