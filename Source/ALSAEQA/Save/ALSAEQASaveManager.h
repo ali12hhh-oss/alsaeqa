@@ -45,11 +45,14 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
     bool AddFamilyClue(FName ClueId);
 
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion")
+    bool HasFamilyClue(FName ClueId) const;
+
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
     bool CanBeginFamilySearch() const;
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion")
-    FALSAEQACompanionStoryProgress GetCompanionStory() const { return SaveData.CompanionStory; }
+    FALSAEQACompanionStoryProgress GetCompanionStory() const { return SaveData ? SaveData->CompanionStory : FALSAEQACompanionStoryProgress(); }
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
     bool SetCompanionState(EALSAEQACompanionStoryState NewState);
