@@ -43,6 +43,19 @@ void UALSAEQASaveManager::SetStage(int32 NewStage)
     }
 
     SaveData->LastCheckpoint.Stage = FMath::Max(0, NewStage);
+
+    if (NewStage >= FamilySearchStartStage)
+    {
+        SaveData->CompanionStory.FamilySearchStage = FMath::Max(
+            SaveData->CompanionStory.FamilySearchStage,
+            FMath::Min(NewStage, FamilySearchEndStage));
+    }
+
+    if (NewStage >= FamilySearchEndStage)
+    {
+        SaveData->CompanionStory.FamilySearchStage = FamilySearchEndStage;
+        SaveData->CompanionStory.bFamilySearchCompleted = true;
+    }
 }
 
 bool UALSAEQASaveManager::SaveCheckpoint(FName CheckpointId, FName RegionId, int32 Stage, FVector PlayerLocation, FRotator PlayerRotation)
@@ -57,6 +70,20 @@ bool UALSAEQASaveManager::SaveCheckpoint(FName CheckpointId, FName RegionId, int
     SaveData->LastCheckpoint.Stage = FMath::Max(0, Stage);
     SaveData->LastCheckpoint.PlayerLocation = PlayerLocation;
     SaveData->LastCheckpoint.PlayerRotation = PlayerRotation;
+
+    if (Stage >= FamilySearchStartStage)
+    {
+        SaveData->CompanionStory.FamilySearchStage = FMath::Max(
+            SaveData->CompanionStory.FamilySearchStage,
+            FMath::Min(Stage, FamilySearchEndStage));
+    }
+
+    if (Stage >= FamilySearchEndStage)
+    {
+        SaveData->CompanionStory.FamilySearchStage = FamilySearchEndStage;
+        SaveData->CompanionStory.bFamilySearchCompleted = true;
+    }
+
     return SaveProgress();
 }
 
@@ -123,9 +150,78 @@ bool UALSAEQASaveManager::HasFamilyClue(FName ClueId) const
     return SaveData && !ClueId.IsNone() && SaveData->CompanionStory.FamilyClueIds.Contains(ClueId);
 }
 
+bool UALSAEQASaveManager::RecordFamilyEvidence(FName EvidenceId)
+{
+    if (!EnsureSaveData() || EvidenceId.IsNone() || !IsFamilySearchActive())
+    {
+        return false;
+    }
+
+    if (SaveData->CompanionStory.PersistentFlags.Contains(EvidenceId))
+    {
+        return false;
+    }
+
+    SaveData->CompanionStory.PersistentFlags.Add(EvidenceId);
+    SaveData->CompanionStory.FamilyEvidenceCount = SaveData->CompanionStory.PersistentFlags.Num();
+    SaveData->CompanionStory.State = EALSAEQACompanionStoryState::FamilyClue;
+    return true;
+}
+
+bool UALSAEQASaveManager::HasFamilyEvidence(FName EvidenceId) const
+{
+    return SaveData && !EvidenceId.IsNone() && SaveData->CompanionStory.PersistentFlags.Contains(EvidenceId);
+}
+
+bool UALSAEQASaveManager::SetFamilySearchStage(int32 NewStage)
+{
+    if (!EnsureSaveData() || NewStage < FamilySearchStartStage || NewStage > FamilySearchEndStage)
+    {
+        return false;
+    }
+
+    if (NewStage < SaveData->CompanionStory.FamilySearchStage)
+    {
+        return false;
+    }
+
+    SaveData->CompanionStory.FamilySearchStage = NewStage;
+    if (NewStage >= FamilySearchEndStage)
+    {
+        SaveData->CompanionStory.bFamilySearchCompleted = true;
+    }
+    return SaveProgress();
+}
+
+bool UALSAEQASaveManager::IsFamilySearchActive() const
+{
+    if (!SaveData)
+    {
+        return false;
+    }
+
+    const int32 Stage = SaveData->LastCheckpoint.Stage;
+    return Stage >= FamilySearchStartStage && Stage <= FamilySearchEndStage;
+}
+
+int32 UALSAEQASaveManager::GetFamilySearchStage() const
+{
+    return SaveData ? SaveData->CompanionStory.FamilySearchStage : 0;
+}
+
+int32 UALSAEQASaveManager::GetFamilyEvidenceCount() const
+{
+    return SaveData ? SaveData->CompanionStory.FamilyEvidenceCount : 0;
+}
+
+bool UALSAEQASaveManager::IsFamilySearchCompleted() const
+{
+    return SaveData && SaveData->CompanionStory.bFamilySearchCompleted;
+}
+
 bool UALSAEQASaveManager::CanBeginFamilySearch() const
 {
-    return SaveData && SaveData->LastCheckpoint.Stage >= FamilySearchStage;
+    return SaveData && SaveData->LastCheckpoint.Stage >= FamilySearchStartStage;
 }
 
 bool UALSAEQASaveManager::SetCompanionState(EALSAEQACompanionStoryState NewState)
