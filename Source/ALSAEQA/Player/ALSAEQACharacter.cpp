@@ -99,8 +99,12 @@ int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
     FCollisionQueryParams Params(SCENE_QUERY_STAT(ALSAEQAThunderRelease), false, this);
     Params.AddIgnoredActor(this);
 
+    FCollisionObjectQueryParams ObjectTypes;
+    ObjectTypes.AddObjectTypesToQuery(ECC_Pawn);
+    ObjectTypes.AddObjectTypesToQuery(ECC_WorldDynamic);
+
     TArray<FHitResult> Hits;
-    World->SweepMultiByChannel(Hits, Start, End, FQuat::Identity, ECC_Pawn, Shape, Params);
+    World->SweepMultiByObjectType(Hits, Start, End, FQuat::Identity, ObjectTypes, Shape, Params);
 
     TSet<AActor*> DamagedActors;
     int32 HitCount = 0;
@@ -112,8 +116,7 @@ int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
             continue;
         }
 
-        const FVector TargetLocation = Target->GetActorLocation();
-        const FVector HitLocation = Hit.ImpactPoint.IsNearlyZero() ? TargetLocation : Hit.ImpactPoint;
+        const FVector HitLocation = Hit.ImpactPoint.IsNearlyZero() ? Target->GetActorLocation() : Hit.ImpactPoint;
 
         if (Target->GetClass()->ImplementsInterface(UALSAEQADamageReceiver::StaticClass()))
         {
@@ -132,19 +135,21 @@ int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
         Target->GetComponents<UALSAEQAThunderEnvironmentComponent>(EnvironmentComponents);
         for (UALSAEQAThunderEnvironmentComponent* Environment : EnvironmentComponents)
         {
-            if (IsValid(Environment))
+            if (!IsValid(Environment))
             {
-                FALSAEQADamageInfo ThunderInfo;
-                ThunderInfo.Amount = Damage;
-                ThunderInfo.Type = EALSAEQADamageType::Thunder;
-                ThunderInfo.Instigator = this;
-                ThunderInfo.HitLocation = HitLocation;
-                if (Environment->ReceiveThunder(ThunderInfo))
-                {
-                    DamagedActors.Add(Target);
-                    ++HitCount;
-                    break;
-                }
+                continue;
+            }
+
+            FALSAEQADamageInfo ThunderInfo;
+            ThunderInfo.Amount = Damage;
+            ThunderInfo.Type = EALSAEQADamageType::Thunder;
+            ThunderInfo.Instigator = this;
+            ThunderInfo.HitLocation = HitLocation;
+            if (Environment->ReceiveThunder(ThunderInfo))
+            {
+                DamagedActors.Add(Target);
+                ++HitCount;
+                break;
             }
         }
     }
