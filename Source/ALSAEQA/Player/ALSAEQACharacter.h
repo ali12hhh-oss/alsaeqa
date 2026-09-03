@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Abilities/ALSAEQAAbilityTypes.h"
 #include "ALSAEQACharacter.generated.h"
 
 class UALSAEQAAbilityComponent;
