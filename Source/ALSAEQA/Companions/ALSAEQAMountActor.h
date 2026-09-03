@@ -18,6 +18,15 @@ public:
     virtual void Tick(float DeltaSeconds) override;
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
+    bool InitializeWildMount(const FALSAEQAMountProfile& Profile);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
+    bool BeginTaming();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
+    bool AddTamingProgress(float Amount);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
     bool Tame(const FALSAEQAMountProfile& Profile);
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
