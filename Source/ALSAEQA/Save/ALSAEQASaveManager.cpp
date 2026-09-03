@@ -110,12 +110,17 @@ bool UALSAEQASaveManager::AddFamilyClue(FName ClueId)
     }
 
     SaveData->CompanionStory.FamilyClueIds.Add(ClueId);
-    ++SaveData->CompanionStory.FamilyClueCount;
+    SaveData->CompanionStory.FamilyClueCount = SaveData->CompanionStory.FamilyClueIds.Num();
     if (SaveData->CompanionStory.State < EALSAEQACompanionStoryState::FamilyClue)
     {
         SaveData->CompanionStory.State = EALSAEQACompanionStoryState::FamilyClue;
     }
     return true;
+}
+
+bool UALSAEQASaveManager::HasFamilyClue(FName ClueId) const
+{
+    return SaveData && !ClueId.IsNone() && SaveData->CompanionStory.FamilyClueIds.Contains(ClueId);
 }
 
 bool UALSAEQASaveManager::CanBeginFamilySearch() const
