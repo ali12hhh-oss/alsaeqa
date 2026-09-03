@@ -1,11 +1,13 @@
 #include "Creatures/ALSAEQAGiantSnake.h"
 
-#include "Components/ALSAEQAHealthComponent.h"
+#include "Systems/ALSAEQAHealthComponent.h"
+#include "Combat/ALSAEQAResistanceComponent.h"
 
 AALSAEQAGiantSnake::AALSAEQAGiantSnake()
 {
     PrimaryActorTick.bCanEverTick = false;
     HealthComponent = CreateDefaultSubobject<UALSAEQAHealthComponent>(TEXT("HealthComponent"));
+    ResistanceComponent = CreateDefaultSubobject<UALSAEQAResistanceComponent>(TEXT("ResistanceComponent"));
 }
 
 float AALSAEQAGiantSnake::ReceiveALSAEQADamage_Implementation(const FALSAEQADamageInfo& DamageInfo)
@@ -15,9 +17,12 @@ float AALSAEQAGiantSnake::ReceiveALSAEQADamage_Implementation(const FALSAEQADama
         return 0.0f;
     }
 
-    // ApplyDamage is intentionally void; return the amount accepted by this receiver.
-    HealthComponent->ApplyDamage(DamageInfo.Amount);
-    return DamageInfo.Amount;
+    const float FinalDamage = ResistanceComponent
+        ? ResistanceComponent->ModifyDamage(DamageInfo)
+        : DamageInfo.Amount;
+
+    HealthComponent->ApplyDamage(FinalDamage);
+    return FinalDamage;
 }
 
 void AALSAEQAGiantSnake::StartAmbush()
