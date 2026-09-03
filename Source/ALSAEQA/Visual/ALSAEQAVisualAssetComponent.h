@@ -19,9 +19,7 @@ class ALSAEQA_API UALSAEQAVisualAssetComponent : public UActorComponent
 public:
     UALSAEQAVisualAssetComponent();
 
-    /** Applies the configured real skeletal mesh/animation class to an owning Character. */
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Visual") bool ApplyVisualAsset();
-
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Visual") bool HasConfiguredVisualAsset() const;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="ALSAEQA|Visual")
@@ -32,4 +30,7 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="ALSAEQA|Visual")
     bool bApplyOnBeginPlay = true;
+
+protected:
+    virtual void BeginPlay() override;
 };
