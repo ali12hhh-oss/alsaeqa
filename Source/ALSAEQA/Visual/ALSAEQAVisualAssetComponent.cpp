@@ -10,6 +10,15 @@ UALSAEQAVisualAssetComponent::UALSAEQAVisualAssetComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UALSAEQAVisualAssetComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    if (bApplyOnBeginPlay)
+    {
+        ApplyVisualAsset();
+    }
+}
+
 bool UALSAEQAVisualAssetComponent::HasConfiguredVisualAsset() const
 {
     return !SkeletalMesh.IsNull();
