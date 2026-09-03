@@ -157,20 +157,20 @@ bool UALSAEQASaveManager::RecordFamilyEvidence(FName EvidenceId)
         return false;
     }
 
-    if (SaveData->CompanionStory.PersistentFlags.Contains(EvidenceId))
+    if (SaveData->CompanionStory.FamilyEvidenceIds.Contains(EvidenceId))
     {
         return false;
     }
 
-    SaveData->CompanionStory.PersistentFlags.Add(EvidenceId);
-    SaveData->CompanionStory.FamilyEvidenceCount = SaveData->CompanionStory.PersistentFlags.Num();
+    SaveData->CompanionStory.FamilyEvidenceIds.Add(EvidenceId);
+    SaveData->CompanionStory.FamilyEvidenceCount = SaveData->CompanionStory.FamilyEvidenceIds.Num();
     SaveData->CompanionStory.State = EALSAEQACompanionStoryState::FamilyClue;
-    return true;
+    return SaveProgress();
 }
 
 bool UALSAEQASaveManager::HasFamilyEvidence(FName EvidenceId) const
 {
-    return SaveData && !EvidenceId.IsNone() && SaveData->CompanionStory.PersistentFlags.Contains(EvidenceId);
+    return SaveData && !EvidenceId.IsNone() && SaveData->CompanionStory.FamilyEvidenceIds.Contains(EvidenceId);
 }
 
 bool UALSAEQASaveManager::SetFamilySearchStage(int32 NewStage)
