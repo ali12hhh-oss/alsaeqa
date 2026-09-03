@@ -22,4 +22,7 @@ struct ALSAEQA_API FALSAEQACheckpointData
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
     FRotator PlayerRotation = FRotator::ZeroRotator;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
+    int32 RespawnCount = 0;
 };
