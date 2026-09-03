@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Systems/ALSAEQAAbilityComponent.h"
+#include "Companions/ALSAEQAMountAbilityComponent.h"
 #include "ALSAEQACharacter.generated.h"
 
 class UALSAEQAHealthComponent;
@@ -32,6 +33,8 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding") bool MountNearestTamedMount();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding") bool DismountCurrentMount();
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Riding") bool IsRiding() const;
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities") bool ActivateAbility(EALSAEQAAbility Ability);
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|MountAbility") bool ActivateMountAbility(EALSAEQAMountAbility Ability);
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Riding") UALSAEQARidingComponent* GetRidingComponent() const { return RidingComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Abilities") UALSAEQAAbilityComponent* GetAbilityComponent() const { return AbilityComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Health") UALSAEQAHealthComponent* GetHealthComponent() const { return HealthComponent; }
@@ -44,6 +47,16 @@ protected:
     void MoveRight(float Value);
     void LookUp(float Value);
     void Turn(float Value);
+    void ActivateMountLightningDash();
+    void ActivateMountThunderRoar();
+    void ActivateMountLightningKick();
+    void ActivateMountStormCharge();
+    void ActivateMountLightningCrossing();
+    void ActivateMountStormLeap();
+    void ActivateMountLightningShield();
+    void ActivateMountStormSummon();
+    void ActivateMountThunderSense();
+    void ActivateMountStormMode();
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<USpringArmComponent> CameraBoom;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UCameraComponent> FollowCamera;
