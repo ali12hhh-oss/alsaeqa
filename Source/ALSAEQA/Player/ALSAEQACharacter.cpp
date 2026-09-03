@@ -7,6 +7,7 @@
 #include "Companions/ALSAEQARidingComponent.h"
 #include "Companions/ALSAEQAMountActor.h"
 #include "Companions/ALSAEQAMountComponent.h"
+#include "Save/ALSAEQASaveManager.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/InputComponent.h"
@@ -18,6 +19,7 @@
 #include "EngineUtils.h"
 #include "CollisionQueryParams.h"
 #include "CollisionShape.h"
+#include "GameFramework/PlayerController.h"
 
 AALSAEQACharacter::AALSAEQACharacter()
 {
@@ -45,7 +47,14 @@ AALSAEQACharacter::AALSAEQACharacter()
     GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
 }
 
-void AALSAEQACharacter::BeginPlay() { Super::BeginPlay(); }
+void AALSAEQACharacter::BeginPlay()
+{
+    Super::BeginPlay();
+    if (HealthComponent)
+    {
+        HealthComponent->OnDeath.AddDynamic(this, &AALSAEQACharacter::HandlePlayerDeath);
+    }
+}
 
 void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -75,6 +84,7 @@ void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 void AALSAEQACharacter::MoveForward(float Value)
 {
+    if (bDeathInProgress) return;
     if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->MoveForward(Value); return; }
     if (Controller && !FMath::IsNearlyZero(Value))
     {
@@ -85,6 +95,7 @@ void AALSAEQACharacter::MoveForward(float Value)
 
 void AALSAEQACharacter::MoveRight(float Value)
 {
+    if (bDeathInProgress) return;
     if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->MoveRight(Value); return; }
     if (Controller && !FMath::IsNearlyZero(Value))
     {
@@ -93,11 +104,12 @@ void AALSAEQACharacter::MoveRight(float Value)
     }
 }
 
-void AALSAEQACharacter::LookUp(float Value) { AddControllerPitchInput(Value); }
-void AALSAEQACharacter::Turn(float Value) { AddControllerYawInput(Value); }
+void AALSAEQACharacter::LookUp(float Value) { if (!bDeathInProgress) AddControllerPitchInput(Value); }
+void AALSAEQACharacter::Turn(float Value) { if (!bDeathInProgress) AddControllerYawInput(Value); }
 
 void AALSAEQACharacter::StartSprint()
 {
+    if (bDeathInProgress) return;
     if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->SetSprint(true); return; }
     GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
 }
@@ -113,7 +125,7 @@ bool AALSAEQACharacter::DismountCurrentMount() { return RidingComponent && Ridin
 
 bool AALSAEQACharacter::MountNearestTamedMount()
 {
-    if (!RidingComponent || RidingComponent->IsRiding()) return false;
+    if (bDeathInProgress || !RidingComponent || RidingComponent->IsRiding()) return false;
     UWorld* World = GetWorld();
     if (!World) return false;
     AALSAEQAMountActor* BestMount = nullptr;
@@ -132,7 +144,7 @@ bool AALSAEQACharacter::MountOrDismount() { return IsRiding() ? DismountCurrentM
 
 bool AALSAEQACharacter::ActivateMountAbility(EALSAEQAMountAbility Ability)
 {
-    if (!RidingComponent || !RidingComponent->IsRiding()) return false;
+    if (bDeathInProgress || !RidingComponent || !RidingComponent->IsRiding()) return false;
     AALSAEQAMountActor* Mount = RidingComponent->GetCurrentMount();
     UALSAEQAMountAbilityComponent* Abilities = Mount ? Mount->GetMountAbilityComponent() : nullptr;
     return Abilities && Abilities->TryActivate(Ability);
@@ -151,7 +163,7 @@ void AALSAEQACharacter::ActivateMountStormMode() { ActivateMountAbility(EALSAEQA
 
 bool AALSAEQACharacter::PerformMeleeStrike(bool bHeavy)
 {
-    if (!MeleeCombatComponent) return false;
+    if (bDeathInProgress || !MeleeCombatComponent) return false;
     const bool bStarted = bHeavy ? MeleeCombatComponent->HeavyAttack() : MeleeCombatComponent->LightAttack();
     if (!bStarted) return false;
 
@@ -182,7 +194,7 @@ void AALSAEQACharacter::PerformHeavyAttack() { PerformMeleeStrike(true); }
 
 void AALSAEQACharacter::BeginThunderCharge()
 {
-    if (ThunderChargeComponent && AbilityComponent && AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock)) ThunderChargeComponent->BeginCharge();
+    if (!bDeathInProgress && ThunderChargeComponent && AbilityComponent && AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock)) ThunderChargeComponent->BeginCharge();
 }
 
 int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
@@ -231,7 +243,7 @@ int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
 
 void AALSAEQACharacter::ReleaseThunderCharge()
 {
-    if (!ThunderChargeComponent || !AbilityComponent || !AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock)) return;
+    if (bDeathInProgress || !ThunderChargeComponent || !AbilityComponent || !AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock)) return;
     const float ChargePercent = ThunderChargeComponent->GetChargePercent();
     const float Multiplier = ThunderChargeComponent->GetDamageMultiplier();
     constexpr float MinimumCharge = 0.15f;
@@ -252,5 +264,99 @@ void AALSAEQACharacter::CancelThunderCharge()
 
 bool AALSAEQACharacter::ActivateAbility(EALSAEQAAbility Ability)
 {
-    return AbilityComponent && AbilityComponent->TryActivateAbility(Ability);
+    return !bDeathInProgress && AbilityComponent && AbilityComponent->TryActivateAbility(Ability);
+}
+
+void AALSAEQACharacter::HandlePlayerDeath()
+{
+    if (bDeathInProgress || !IsValid(this)) return;
+    bDeathInProgress = true;
+
+    if (GetWorld())
+    {
+        GetWorld()->GetTimerManager().ClearTimer(RespawnTimerHandle);
+    }
+
+    if (RidingComponent && RidingComponent->IsRiding())
+    {
+        RidingComponent->Dismount();
+    }
+    if (ThunderChargeComponent)
+    {
+        ThunderChargeComponent->CancelCharge();
+    }
+
+    StopJumping();
+    if (GetCharacterMovement())
+    {
+        GetCharacterMovement()->StopMovementImmediately();
+        GetCharacterMovement()->DisableMovement();
+    }
+    SetActorEnableCollision(false);
+    if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+    {
+        DisableInput(PlayerController);
+    }
+
+    if (GetWorld())
+    {
+        GetWorld()->GetTimerManager().SetTimer(
+            RespawnTimerHandle,
+            this,
+            &AALSAEQACharacter::RespawnAtCheckpoint,
+            FMath::Max(0.1f, DeathRespawnDelay),
+            false);
+    }
+}
+
+void AALSAEQACharacter::RespawnAtCheckpoint()
+{
+    if (!IsValid(this)) return;
+
+    UALSAEQASaveManager* SaveManager = nullptr;
+    if (UGameInstance* GameInstance = GetGameInstance())
+    {
+        SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>();
+    }
+
+    FALSAEQACheckpointData Checkpoint;
+    bool bHasCheckpoint = false;
+    if (SaveManager)
+    {
+        Checkpoint = SaveManager->GetLastCheckpoint();
+        bHasCheckpoint = !Checkpoint.CheckpointId.IsNone();
+        if (bHasCheckpoint)
+        {
+            SaveManager->RespawnAtLastCheckpoint();
+        }
+    }
+
+    if (bHasCheckpoint)
+    {
+        SetActorLocationAndRotation(Checkpoint.PlayerLocation, Checkpoint.PlayerRotation, false, nullptr, ETeleportType::TeleportPhysics);
+    }
+
+    if (GetCharacterMovement())
+    {
+        GetCharacterMovement()->StopMovementImmediately();
+        GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    }
+
+    SetActorEnableCollision(true);
+    if (HealthComponent)
+    {
+        HealthComponent->ResetHealth();
+    }
+
+    if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+    {
+        EnableInput(PlayerController);
+        if (bHasCheckpoint)
+        {
+            PlayerController->SetControlRotation(Checkpoint.PlayerRotation);
+        }
+    }
+
+    bDeathInProgress = false;
 }
