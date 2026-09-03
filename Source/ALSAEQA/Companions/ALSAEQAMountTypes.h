@@ -35,6 +35,9 @@ struct FALSAEQAMountProfile
     EALSAEQAMountType Type = EALSAEQAMountType::Horse;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
+    int32 MinimumStage = 45;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
     float MovementSpeedMultiplier = 1.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
