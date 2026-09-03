@@ -6,7 +6,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQACompanionFamilyGateChanged, bool, bUnlocked);
 
-/** Keeps the companion family-rescue arc locked until a deliberately late stage. */
+/** Keeps the companion family-search arc locked until a deliberately very late stage. */
 UCLASS(ClassGroup=(Companions), meta=(BlueprintSpawnableComponent))
 class ALSAEQA_API UALSAEQACompanionFamilyGate : public UActorComponent
 {
@@ -15,8 +15,9 @@ class ALSAEQA_API UALSAEQACompanionFamilyGate : public UActorComponent
 public:
     UALSAEQACompanionFamilyGate();
 
+    /** Stage at which the companion's active family search begins. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Companion Family")
-    int32 RequiredStage = 17;
+    int32 RequiredStage = 25;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Companion Family")
     bool bFamilyArcUnlocked = false;
