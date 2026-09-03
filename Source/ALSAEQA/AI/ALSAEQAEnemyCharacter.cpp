@@ -1,5 +1,6 @@
 #include "AI/ALSAEQAEnemyCharacter.h"
 #include "Systems/ALSAEQAHealthComponent.h"
+#include "Visual/ALSAEQAVisualAssetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -11,6 +12,7 @@ AALSAEQAEnemyCharacter::AALSAEQAEnemyCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
     HealthComponent = CreateDefaultSubobject<UALSAEQAHealthComponent>(TEXT("HealthComponent"));
+    VisualAssetComponent = CreateDefaultSubobject<UALSAEQAVisualAssetComponent>(TEXT("VisualAssetComponent"));
     GetCharacterMovement()->MaxWalkSpeed = ChaseSpeed;
 }
 
@@ -37,8 +39,6 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
         }
     }
 
-    // Difficulty rises continuously with the current stage. This affects pursuit
-    // speed, detection pressure and outgoing damage without making early stages unfair.
     const float Progress = static_cast<float>(CurrentStage - 1);
     const float StageSpeedMultiplier = 1.0f + Progress * 0.004f;
     const float StageDetectionMultiplier = 1.0f + Progress * 0.0025f;
@@ -81,7 +81,6 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
     if (Distance <= EffectiveAttackRange)
     {
         SetEnemyState(EALSAEQAEnemyState::Attack);
-
         AALSAEQACharacter* Player = Cast<AALSAEQACharacter>(Target);
         if (Player && Player->GetHealthComponent() && !Player->GetHealthComponent()->IsDead() && AttackCooldownRemaining <= 0.0f)
         {
