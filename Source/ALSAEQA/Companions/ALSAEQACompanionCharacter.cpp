@@ -1,9 +1,10 @@
-#include "Companions/ALSAEQACompanionCharacter.h"
+#include "ALSAEQACompanionCharacter.h"
 
 #include "Systems/ALSAEQAHealthComponent.h"
 #include "Companions/ALSAEQACompanionStoryComponent.h"
 #include "Companions/ALSAEQACompanionCaptureComponent.h"
 #include "Companions/ALSAEQARidingComponent.h"
+#include "Companions/ALSAEQAMountActor.h"
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
 #include "Save/ALSAEQASaveManager.h"
@@ -97,4 +98,19 @@ bool AALSAEQACompanionCharacter::BeginFamilySearch()
     }
 
     return StoryComponent && StoryComponent->SetState(EALSAEQACompanionStoryState::FamilyRevelation);
+}
+
+bool AALSAEQACompanionCharacter::Mount(AALSAEQAMountActor* MountActor)
+{
+    if (!MountActor || !RidingComponent || BehaviorState == EALSAEQACompanionBehaviorState::Captured || BehaviorState == EALSAEQACompanionBehaviorState::Separated)
+    {
+        return false;
+    }
+
+    return RidingComponent->TryMount(MountActor);
+}
+
+bool AALSAEQACompanionCharacter::Dismount()
+{
+    return RidingComponent && RidingComponent->Dismount();
 }
