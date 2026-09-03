@@ -84,12 +84,12 @@ bool UALSAEQASaveManager::HasWorldFlag(FName FlagId) const
 
 bool UALSAEQASaveManager::AddFamilyClue(FName ClueId)
 {
-    if (!EnsureSaveData() || ClueId.IsNone() || SaveData->CompanionStory.CompletedSceneIds.Contains(ClueId))
+    if (!EnsureSaveData() || ClueId.IsNone() || SaveData->CompanionStory.FamilyClueIds.Contains(ClueId))
     {
         return false;
     }
 
-    SaveData->CompanionStory.CompletedSceneIds.Add(ClueId);
+    SaveData->CompanionStory.FamilyClueIds.Add(ClueId);
     ++SaveData->CompanionStory.FamilyClueCount;
     if (SaveData->CompanionStory.State < EALSAEQACompanionStoryState::FamilyClue)
     {
@@ -110,7 +110,7 @@ bool UALSAEQASaveManager::SetCompanionState(EALSAEQACompanionStoryState NewState
         return false;
     }
 
-    // Captured/rescued/trusted states are valid at any stage; only the family-revelation state is gated.
+    // Family revelation/search progression is unavailable before stage 25.
     if (NewState == EALSAEQACompanionStoryState::FamilyRevelation && !CanBeginFamilySearch())
     {
         return false;
