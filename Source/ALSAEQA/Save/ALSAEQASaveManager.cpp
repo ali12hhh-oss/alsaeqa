@@ -22,24 +22,35 @@ bool UALSAEQASaveManager::LoadProgress() { SaveData = nullptr; return EnsureSave
 void UALSAEQASaveManager::SetStage(int32 NewStage)
 {
     if (!EnsureSaveData()) return;
-    SaveData->LastCheckpoint.Stage = FMath::Max(0, NewStage);
-    if (NewStage >= FamilySearchStartStage)
-        SaveData->CompanionStory.FamilySearchStage = FMath::Max(SaveData->CompanionStory.FamilySearchStage, FMath::Min(NewStage, FamilySearchEndStage));
-    if (NewStage >= FamilySearchEndStage) { SaveData->CompanionStory.FamilySearchStage = FamilySearchEndStage; SaveData->CompanionStory.bFamilySearchCompleted = true; }
+    const int32 SafeStage = FMath::Max(1, NewStage);
+    SaveData->LastCheckpoint.Stage = SafeStage;
+    if (SafeStage >= FamilySearchStartStage)
+        SaveData->CompanionStory.FamilySearchStage = FMath::Max(SaveData->CompanionStory.FamilySearchStage, FMath::Min(SafeStage, FamilySearchEndStage));
+    if (SafeStage >= FamilySearchEndStage)
+    {
+        SaveData->CompanionStory.FamilySearchStage = FamilySearchEndStage;
+        SaveData->CompanionStory.bFamilySearchCompleted = true;
+    }
+    SaveProgress();
 }
 
 bool UALSAEQASaveManager::SaveCheckpoint(FName CheckpointId, FName RegionId, int32 Stage, FVector PlayerLocation, FRotator PlayerRotation)
 {
     if (!EnsureSaveData() || CheckpointId.IsNone()) return false;
+    const int32 SafeStage = FMath::Max(1, Stage);
     SaveData->LastCheckpoint.CheckpointId = CheckpointId;
     SaveData->LastCheckpoint.RegionId = RegionId;
-    SaveData->LastCheckpoint.Stage = FMath::Max(0, Stage);
+    SaveData->LastCheckpoint.Stage = SafeStage;
     SaveData->LastCheckpoint.PlayerLocation = PlayerLocation;
     SaveData->LastCheckpoint.PlayerRotation = PlayerRotation;
     SaveData->LastCheckpoint.RespawnCount = 0;
-    if (Stage >= FamilySearchStartStage)
-        SaveData->CompanionStory.FamilySearchStage = FMath::Max(SaveData->CompanionStory.FamilySearchStage, FMath::Min(Stage, FamilySearchEndStage));
-    if (Stage >= FamilySearchEndStage) { SaveData->CompanionStory.FamilySearchStage = FamilySearchEndStage; SaveData->CompanionStory.bFamilySearchCompleted = true; }
+    if (SafeStage >= FamilySearchStartStage)
+        SaveData->CompanionStory.FamilySearchStage = FMath::Max(SaveData->CompanionStory.FamilySearchStage, FMath::Min(SafeStage, FamilySearchEndStage));
+    if (SafeStage >= FamilySearchEndStage)
+    {
+        SaveData->CompanionStory.FamilySearchStage = FamilySearchEndStage;
+        SaveData->CompanionStory.bFamilySearchCompleted = true;
+    }
     return SaveProgress();
 }
 
@@ -51,7 +62,7 @@ bool UALSAEQASaveManager::RespawnAtLastCheckpoint()
     return true;
 }
 
-int32 UALSAEQASaveManager::GetStage() const { return SaveData ? SaveData->LastCheckpoint.Stage : 0; }
+int32 UALSAEQASaveManager::GetStage() const { return SaveData ? FMath::Max(1, SaveData->LastCheckpoint.Stage) : 1; }
 FALSAEQACheckpointData UALSAEQASaveManager::GetLastCheckpoint() const { return SaveData ? SaveData->LastCheckpoint : FALSAEQACheckpointData(); }
 int32 UALSAEQASaveManager::GetRespawnCount() const { return SaveData ? SaveData->LastCheckpoint.RespawnCount : 0; }
 
@@ -77,7 +88,8 @@ bool UALSAEQASaveManager::SaveTamedMount(const FALSAEQAMountProfile& Profile)
     if (!EnsureSaveData() || Profile.MountId.IsNone() || Profile.TamingProgress < Profile.TamingRequired) return false;
     const int32 Existing = SaveData->TamedMountProfiles.IndexOfByPredicate([&Profile](const FALSAEQAMountProfile& Item){ return Item.MountId == Profile.MountId; });
     if (Existing == INDEX_NONE) SaveData->TamedMountProfiles.Add(Profile); else SaveData->TamedMountProfiles[Existing] = Profile;
-    SaveData->TamedMountProfiles[Existing == INDEX_NONE ? SaveData->TamedMountProfiles.Num() - 1 : Existing].TamingProgress = FMath::Max(Profile.TamingProgress, Profile.TamingRequired);
+    const int32 Index = Existing == INDEX_NONE ? SaveData->TamedMountProfiles.Num() - 1 : Existing;
+    SaveData->TamedMountProfiles[Index].TamingProgress = FMath::Max(Profile.TamingProgress, Profile.TamingRequired);
     return SaveProgress();
 }
 bool UALSAEQASaveManager::HasTamedMount(FName MountId) const { return SaveData && !MountId.IsNone() && SaveData->TamedMountProfiles.ContainsByPredicate([MountId](const FALSAEQAMountProfile& Profile){ return Profile.MountId == MountId; }); }
