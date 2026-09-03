@@ -9,6 +9,7 @@ class UALSAEQAHealthComponent;
 class UALSAEQACompanionStoryComponent;
 class UALSAEQACompanionCaptureComponent;
 class UALSAEQARidingComponent;
+class AALSAEQAMountActor;
 
 UENUM(BlueprintType)
 enum class EALSAEQACompanionBehaviorState : uint8
@@ -45,6 +46,12 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
     bool BeginFamilySearch();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding")
+    bool Mount(AALSAEQAMountActor* MountActor);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding")
+    bool Dismount();
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion")
     FName GetCompanionId() const { return CompanionId; }
