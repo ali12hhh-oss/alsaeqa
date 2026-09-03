@@ -132,16 +132,17 @@ bool UALSAEQAMountComponent::RestoreStamina(float Amount)
 
 bool UALSAEQAMountComponent::ConsumeStamina(float Amount)
 {
-    if (!IsMounted() || Amount <= 0.0f || MountProfile.Stamina < Amount)
+    if (!IsMounted() || Amount <= 0.0f)
+    {
+        return false;
+    }
+
+    if (MountProfile.Stamina <= 0.0f)
     {
         return false;
     }
 
     MountProfile.Stamina = FMath::Clamp(MountProfile.Stamina - Amount, 0.0f, MountProfile.MaxStamina);
-    if (MountProfile.Stamina <= 0.0f)
-    {
-        Dismount();
-    }
     return true;
 }
 
