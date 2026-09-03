@@ -1,0 +1,59 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "ALSAEQAPowerTypes.h"
+#include "ALSAEQAProgressionComponent.generated.h"
+
+delegate void FALSAEQAProgressionChanged();
+
+UCLASS(ClassGroup=(ALSAEQA), meta=(BlueprintSpawnableComponent))
+class ALSAEQA_API UALSAEQAProgressionComponent : public UActorComponent
+{
+    GENERATED_BODY()
+
+public:
+    UALSAEQAProgressionComponent();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Progression")
+    bool UnlockPower(EALSAEQAPower Power, FName DiscoveryId);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Progression")
+    bool AcquireWeapon(EALSAEQAWeapon Weapon, FName DiscoveryId);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Progression")
+    bool AdvanceStage(int32 NewStage);
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    bool HasPower(EALSAEQAPower Power) const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    bool HasWeapon(EALSAEQAWeapon Weapon) const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    bool IsPowerAvailable(EALSAEQAPower Power) const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    bool IsWeaponAvailable(EALSAEQAWeapon Weapon) const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    int32 GetCurrentStage() const { return CurrentStage; }
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Progression")
+    void ResetProgression();
+
+    const TSet<EALSAEQAPower>& GetUnlockedPowers() const { return UnlockedPowers; }
+    const TSet<EALSAEQAWeapon>& GetAcquiredWeapons() const { return AcquiredWeapons; }
+
+    FALSAEQAProgressionChanged OnProgressionChanged;
+
+protected:
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, SaveGame, Category="ALSAEQA|Progression")
+    int32 CurrentStage = 0;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, SaveGame, Category="ALSAEQA|Progression")
+    TSet<EALSAEQAPower> UnlockedPowers;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, SaveGame, Category="ALSAEQA|Progression")
+    TSet<EALSAEQAWeapon> AcquiredWeapons;
+};
