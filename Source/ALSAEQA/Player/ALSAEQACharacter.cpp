@@ -5,6 +5,11 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/InputComponent.h"
 #include "Combat/ALSAEQADamageTypes.h"
+#include "Combat/ALSAEQADamageReceiver.h"
+#include "Engine/World.h"
+#include "Engine/EngineTypes.h"
+#include "CollisionQueryParams.h"
+#include "CollisionShape.h"
 
 AALSAEQACharacter::AALSAEQACharacter()
 {
@@ -79,6 +84,51 @@ void AALSAEQACharacter::BeginThunderCharge()
     }
 }
 
+int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
+{
+    UWorld* World = GetWorld();
+    if (!World || Damage <= 0.0f)
+    {
+        return 0;
+    }
+
+    const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 45.0f);
+    const FVector End = Start + GetActorForwardVector() * ThunderAttackRange;
+    const FCollisionShape Shape = FCollisionShape::MakeSphere(ThunderAttackRadius);
+
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(ALSAEQAThunderRelease), false, this);
+    Params.AddIgnoredActor(this);
+
+    TArray<FHitResult> Hits;
+    if (!World->SweepMultiByChannel(Hits, Start, End, FQuat::Identity, ECC_Pawn, Shape, Params))
+    {
+        return 0;
+    }
+
+    TSet<AActor*> DamagedActors;
+    int32 HitCount = 0;
+    for (const FHitResult& Hit : Hits)
+    {
+        AActor* Target = Hit.GetActor();
+        if (!IsValid(Target) || DamagedActors.Contains(Target) ||
+            !Target->GetClass()->ImplementsInterface(UALSAEQADamageReceiver::StaticClass()))
+        {
+            continue;
+        }
+
+        FALSAEQADamageInfo DamageInfo;
+        DamageInfo.Amount = Damage;
+        DamageInfo.Type = EALSAEQADamageType::Thunder;
+        DamageInfo.Instigator = this;
+        DamageInfo.HitLocation = Hit.ImpactPoint.IsNearlyZero() ? Target->GetActorLocation() : Hit.ImpactPoint;
+        IALSAEQADamageReceiver::Execute_ReceiveALSAEQADamage(Target, DamageInfo);
+        DamagedActors.Add(Target);
+        ++HitCount;
+    }
+
+    return HitCount;
+}
+
 void AALSAEQACharacter::ReleaseThunderCharge()
 {
     if (!ThunderChargeComponent || !AbilityComponent || !AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock))
@@ -103,13 +153,8 @@ void AALSAEQACharacter::ReleaseThunderCharge()
         return;
     }
 
-    const FALSAEQADamageInfo DamageInfo{
-        ThunderReleaseDamage * Multiplier,
-        EALSAEQADamageType::Thunder,
-        this,
-        GetActorLocation() + GetActorForwardVector() * 120.0f
-    };
-    (void)DamageInfo;
+    const float Damage = ThunderReleaseDamage * Multiplier;
+    ApplyThunderReleaseToTargets(Damage);
 }
 
 void AALSAEQACharacter::CancelThunderCharge()
