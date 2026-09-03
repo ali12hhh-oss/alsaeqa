@@ -48,7 +48,28 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion")
     bool HasFamilyClue(FName ClueId) const;
 
-    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion|Family Search")
+    bool RecordFamilyEvidence(FName EvidenceId);
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion|Family Search")
+    bool HasFamilyEvidence(FName EvidenceId) const;
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion|Family Search")
+    bool SetFamilySearchStage(int32 NewStage);
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion|Family Search")
+    bool IsFamilySearchActive() const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion|Family Search")
+    int32 GetFamilySearchStage() const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion|Family Search")
+    int32 GetFamilyEvidenceCount() const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion|Family Search")
+    bool IsFamilySearchCompleted() const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion")
     bool CanBeginFamilySearch() const;
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion")
@@ -59,7 +80,8 @@ public:
 
 private:
     static const FString SaveSlotName;
-    static constexpr int32 FamilySearchStage = 25;
+    static constexpr int32 FamilySearchStartStage = 25;
+    static constexpr int32 FamilySearchEndStage = 40;
     UPROPERTY()
     UALSAEQASaveGame* SaveData = nullptr;
 
