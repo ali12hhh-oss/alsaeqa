@@ -18,6 +18,9 @@ public:
     UALSAEQAMountComponent();
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
+    bool InitializeWildMount(const FALSAEQAMountProfile& Profile);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
     bool BeginTaming();
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
