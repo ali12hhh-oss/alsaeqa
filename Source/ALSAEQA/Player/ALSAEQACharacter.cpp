@@ -2,6 +2,7 @@
 #include "Systems/ALSAEQAHealthComponent.h"
 #include "Storm/ALSAEQAThunderChargeComponent.h"
 #include "Storm/ALSAEQAThunderEnvironmentComponent.h"
+#include "Storm/ALSAEQADynamicStormSubsystem.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/InputComponent.h"
@@ -93,6 +94,13 @@ int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
         return 0;
     }
 
+    float StormMultiplier = 1.0f;
+    if (UALSAEQADynamicStormSubsystem* Storm = World->GetSubsystem<UALSAEQADynamicStormSubsystem>())
+    {
+        StormMultiplier = Storm->GetThunderMultiplier();
+    }
+    const float FinalDamage = Damage * StormMultiplier;
+
     const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 45.0f);
     const FVector End = Start + GetActorForwardVector() * ThunderAttackRange;
     const FCollisionShape Shape = FCollisionShape::MakeSphere(ThunderAttackRadius);
@@ -121,7 +129,7 @@ int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
         if (Target->GetClass()->ImplementsInterface(UALSAEQADamageReceiver::StaticClass()))
         {
             FALSAEQADamageInfo DamageInfo;
-            DamageInfo.Amount = Damage;
+            DamageInfo.Amount = FinalDamage;
             DamageInfo.Type = EALSAEQADamageType::Thunder;
             DamageInfo.Instigator = this;
             DamageInfo.HitLocation = HitLocation;
@@ -141,7 +149,7 @@ int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
             }
 
             FALSAEQADamageInfo ThunderInfo;
-            ThunderInfo.Amount = Damage;
+            ThunderInfo.Amount = FinalDamage;
             ThunderInfo.Type = EALSAEQADamageType::Thunder;
             ThunderInfo.Instigator = this;
             ThunderInfo.HitLocation = HitLocation;
