@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "Systems/ALSAEQAAbilityComponent.h"
 #include "Companions/ALSAEQAMountAbilityComponent.h"
+#include "Combat/ALSAEQAMeleeCombatComponent.h"
 #include "ALSAEQACharacter.generated.h"
 
 class UALSAEQAHealthComponent;
@@ -37,6 +38,7 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|MountAbility") bool ActivateMountAbility(EALSAEQAMountAbility Ability);
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Riding") UALSAEQARidingComponent* GetRidingComponent() const { return RidingComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Abilities") UALSAEQAAbilityComponent* GetAbilityComponent() const { return AbilityComponent; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Combat") UALSAEQAMeleeCombatComponent* GetMeleeCombatComponent() const { return MeleeCombatComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Health") UALSAEQAHealthComponent* GetHealthComponent() const { return HealthComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Thunder") UALSAEQAThunderChargeComponent* GetThunderChargeComponent() const { return ThunderChargeComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Legacy") UALSAEQALegacyComponent* GetLegacyComponent() const { return LegacyComponent; }
@@ -61,6 +63,7 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<USpringArmComponent> CameraBoom;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UCameraComponent> FollowCamera;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAAbilityComponent> AbilityComponent;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAMeleeCombatComponent> MeleeCombatComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAHealthComponent> HealthComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAThunderChargeComponent> ThunderChargeComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQALegacyComponent> LegacyComponent;
@@ -68,10 +71,13 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float WalkSpeed = 360.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float SprintSpeed = 620.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Riding") float MountSearchRadius = 450.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float MeleeAttackRange = 180.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float MeleeAttackRadius = 90.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder") float ThunderReleaseDamage = 30.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder") float ThunderAttackRange = 650.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder") float ThunderAttackRadius = 90.0f;
 
 private:
     int32 ApplyThunderReleaseToTargets(float Damage);
+    bool PerformMeleeStrike(bool bHeavy);
 };
