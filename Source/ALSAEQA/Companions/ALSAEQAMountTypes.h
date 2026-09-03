@@ -38,7 +38,16 @@ struct FALSAEQAMountProfile
     float MovementSpeedMultiplier = 1.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
+    float MaxStamina = 100.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
     float Stamina = 100.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
+    float TamingProgress = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
+    float TamingRequired = 100.0f;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
     bool bCanCombat = false;
