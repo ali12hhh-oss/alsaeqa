@@ -16,6 +16,21 @@ void UALSAEQAMountComponent::SetState(EALSAEQAMountState NewState)
     OnStateChanged.Broadcast(NewState);
 }
 
+bool UALSAEQAMountComponent::InitializeWildMount(const FALSAEQAMountProfile& Profile)
+{
+    if (MountState != EALSAEQAMountState::Wild || Profile.MountId.IsNone())
+    {
+        return false;
+    }
+
+    MountProfile = Profile;
+    MountProfile.MaxStamina = FMath::Max(MountProfile.MaxStamina, 1.0f);
+    MountProfile.Stamina = FMath::Clamp(MountProfile.Stamina, 0.0f, MountProfile.MaxStamina);
+    MountProfile.TamingRequired = FMath::Max(MountProfile.TamingRequired, 1.0f);
+    MountProfile.TamingProgress = 0.0f;
+    return true;
+}
+
 bool UALSAEQAMountComponent::BeginTaming()
 {
     if (MountState != EALSAEQAMountState::Wild || MountProfile.MountId.IsNone())
@@ -132,12 +147,7 @@ bool UALSAEQAMountComponent::RestoreStamina(float Amount)
 
 bool UALSAEQAMountComponent::ConsumeStamina(float Amount)
 {
-    if (!IsMounted() || Amount <= 0.0f)
-    {
-        return false;
-    }
-
-    if (MountProfile.Stamina <= 0.0f)
+    if (!IsMounted() || Amount <= 0.0f || MountProfile.Stamina <= 0.0f)
     {
         return false;
     }
