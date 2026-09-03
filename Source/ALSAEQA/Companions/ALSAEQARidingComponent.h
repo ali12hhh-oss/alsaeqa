@@ -22,6 +22,15 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding")
     bool Dismount();
 
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding")
+    bool MoveForward(float Value);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding")
+    bool MoveRight(float Value);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding")
+    bool SetSprint(bool bEnabled);
+
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Riding")
     bool IsRiding() const { return CurrentMount.IsValid(); }
 
@@ -34,4 +43,7 @@ public:
 private:
     UPROPERTY(BlueprintReadOnly, SaveGame, Category="ALSAEQA|Riding", meta=(AllowPrivateAccess="true"))
     TWeakObjectPtr<AALSAEQAMountActor> CurrentMount;
+
+    UPROPERTY(BlueprintReadOnly, SaveGame, Category="ALSAEQA|Riding", meta=(AllowPrivateAccess="true"))
+    FName CurrentMountId = NAME_None;
 };
