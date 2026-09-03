@@ -27,38 +27,23 @@ class ALSAEQA_API AALSAEQAEnemyCharacter : public ACharacter, public IALSAEQADam
 public:
     AALSAEQAEnemyCharacter();
 
-    UFUNCTION(BlueprintCallable, Category="ALSAEQA|AI")
-    void SetEnemyState(EALSAEQAEnemyState NewState);
-
-    UFUNCTION(BlueprintPure, Category="ALSAEQA|AI")
-    EALSAEQAEnemyState GetEnemyState() const { return EnemyState; }
-
-    UFUNCTION(BlueprintCallable, Category="ALSAEQA|AI")
-    void SetTargetActor(AActor* NewTarget);
-
-    UFUNCTION(BlueprintPure, Category="ALSAEQA|AI")
-    AActor* GetTargetActor() const { return TargetActor.Get(); }
-
-    UFUNCTION(BlueprintPure, Category="ALSAEQA|Health")
-    UALSAEQAHealthComponent* GetHealthComponent() const { return HealthComponent; }
-
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|AI") void SetEnemyState(EALSAEQAEnemyState NewState);
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|AI") EALSAEQAEnemyState GetEnemyState() const { return EnemyState; }
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|AI") void SetTargetActor(AActor* NewTarget);
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|AI") AActor* GetTargetActor() const { return TargetActor.Get(); }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Health") UALSAEQAHealthComponent* GetHealthComponent() const { return HealthComponent; }
     virtual float ReceiveALSAEQADamage_Implementation(const FALSAEQADamageInfo& DamageInfo) override;
 
 protected:
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaSeconds) override;
 
-    UFUNCTION()
-    void HandleDeath();
+    UFUNCTION() void HandleDeath();
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components")
-    TObjectPtr<UALSAEQAHealthComponent> HealthComponent;
-
-    UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|AI")
-    EALSAEQAEnemyState EnemyState = EALSAEQAEnemyState::Idle;
-
-    UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|AI")
-    TWeakObjectPtr<AActor> TargetActor;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI")
-    float ChaseSpeed = 430.0f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAHealthComponent> HealthComponent;
+    UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|AI") EALSAEQAEnemyState EnemyState = EALSAEQAEnemyState::Idle;
+    UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|AI") TWeakObjectPtr<AActor> TargetActor;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float ChaseSpeed = 430.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float DetectionRange = 1600.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float AttackRange = 180.0f;
 };
