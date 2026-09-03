@@ -28,11 +28,14 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion Story")
     bool RegisterRescue();
 
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion Story")
+    void SetCompanionId(FName NewCompanionId);
+
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion Story")
     bool IsFamilySearchUnlocked() const;
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion Story")
-    const FALSAEQACompanionStoryProgress& GetProgress() const { return Progress; }
+    FALSAEQACompanionStoryProgress GetProgress() const { return Progress; }
 
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Companion Story")
     FALSAEQACompanionStoryStateChanged OnStateChanged;
