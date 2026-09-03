@@ -4,8 +4,9 @@
 #include "ALSAEQARuntimeVisualComponent.generated.h"
 
 class UALSAEQAArtProfile;
-class USkeletalMesh;
 class UAnimInstance;
+class UAnimMontage;
+class USkeletalMesh;
 class USkeletalMeshComponent;
 
 UENUM(BlueprintType)
@@ -21,6 +22,11 @@ public:
  UFUNCTION(BlueprintCallable,Category="ALSAEQA|Visual") void SetVisualRole(EALSAEQAVisualRole NewRole);
  UFUNCTION(BlueprintPure,Category="ALSAEQA|Visual") EALSAEQAVisualRole GetVisualRole() const{return VisualRole;}
  UFUNCTION(BlueprintPure,Category="ALSAEQA|Visual") bool IsUsingImportedArt() const{return bUsingImportedArt;}
+ UFUNCTION(BlueprintCallable,Category="ALSAEQA|Animation") bool PlayLightAttackAnimation();
+ UFUNCTION(BlueprintCallable,Category="ALSAEQA|Animation") bool PlayHeavyAttackAnimation();
+ UFUNCTION(BlueprintCallable,Category="ALSAEQA|Animation") bool PlayHitReactionAnimation();
+ UFUNCTION(BlueprintCallable,Category="ALSAEQA|Animation") bool PlayDeathAnimation();
+ UFUNCTION(BlueprintCallable,Category="ALSAEQA|Animation") bool PlaySpecialAbilityAnimation();
 protected:
  virtual void BeginPlay() override;
  virtual void TickComponent(float Delta,ELevelTick TickType,FActorComponentTickFunction* ThisTickFunction) override;
@@ -38,6 +44,7 @@ protected:
 private:
  void ClearVisual();
  bool TryBuildImportedArt();
+ bool PlayProfileMontage(TSoftObjectPtr<UAnimMontage> MontageAsset);
  void AddMeshPart(const TArray<FVector>&V,const TArray<int32>&T,const FVector&Loc,const FRotator&Rot,const FVector&Scale,const FLinearColor&Color,bool Animate=false);
  void AddEllipsoid(const FVector&Loc,const FVector&Scale,const FLinearColor&Color,bool Animate=false,int32 Seg=14,int32 Rings=7);
  void AddTube(const FVector&Loc,float R0,float R1,float H,const FVector&Scale,const FLinearColor&Color,const FRotator&Rot=FRotator::ZeroRotator,bool Animate=false,int32 Seg=12);
