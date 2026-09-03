@@ -30,4 +30,11 @@ struct FALSAEQAStageDefinition
     UPROPERTY(EditAnywhere, BlueprintReadWrite) FName RequiredWeapon = NAME_None;
     UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FALSAEQAStageBeat> Interludes;
     UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FName> PersistentWorldFlags;
+
+    // Difficulty is deliberately monotonic: later stages cannot be configured easier than earlier stages.
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="1.0", ClampMax="10.0")) float DifficultyRating = 1.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0.1", ClampMax="5.0")) float EnemyHealthMultiplier = 1.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0.1", ClampMax="5.0")) float EnemyDamageMultiplier = 1.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0.1", ClampMax="5.0")) float EnemyAggressionMultiplier = 1.0f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0.1", ClampMax="5.0")) float HazardMultiplier = 1.0f;
 };
