@@ -33,6 +33,18 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
     void SetCompanionId(FName NewCompanionId);
 
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
+    bool CaptureCompanion();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
+    bool MarkRescueKnown();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
+    bool RescueCompanion();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
+    bool BeginFamilySearch();
+
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion")
     FName GetCompanionId() const { return CompanionId; }
 
