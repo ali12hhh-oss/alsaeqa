@@ -25,7 +25,7 @@ void AALSAEQACompanionCharacter::SetCompanionId(FName NewCompanionId)
         CompanionId = NewCompanionId;
         if (StoryComponent)
         {
-            StoryComponent->GetProgress().CompanionId = CompanionId;
+            StoryComponent->SetCompanionId(CompanionId);
         }
     }
 }
