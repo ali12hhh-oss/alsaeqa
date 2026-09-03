@@ -16,6 +16,8 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Boss")
     bool ReceiveBossDamage(const FALSAEQADamageInfo& DamageInfo);
 
+    virtual float ReceiveALSAEQADamage_Implementation(const FALSAEQADamageInfo& DamageInfo) override;
+
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Boss")
     UALSAEQABossComponent* GetBossComponent() const { return BossComponent; }
 
