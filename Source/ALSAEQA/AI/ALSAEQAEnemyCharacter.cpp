@@ -12,10 +12,6 @@ AALSAEQAEnemyCharacter::AALSAEQAEnemyCharacter()
 void AALSAEQAEnemyCharacter::BeginPlay()
 {
     Super::BeginPlay();
-    if (HealthComponent)
-    {
-        HealthComponent->OnDeath.AddDynamic(this, &AALSAEQAEnemyCharacter::SetEnemyState);
-    }
 }
 
 void AALSAEQAEnemyCharacter::SetEnemyState(EALSAEQAEnemyState NewState)
