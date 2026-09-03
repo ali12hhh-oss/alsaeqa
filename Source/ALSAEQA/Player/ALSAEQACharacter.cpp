@@ -60,16 +60,21 @@ void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
     PlayerInputComponent->BindAction(TEXT("Mount"), IE_Pressed, this, &AALSAEQACharacter::MountOrDismount);
     PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Pressed, this, &AALSAEQACharacter::BeginThunderCharge);
     PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Released, this, &AALSAEQACharacter::ReleaseThunderCharge);
+    PlayerInputComponent->BindAction(TEXT("MountLightningDash"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningDash);
+    PlayerInputComponent->BindAction(TEXT("MountThunderRoar"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountThunderRoar);
+    PlayerInputComponent->BindAction(TEXT("MountLightningKick"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningKick);
+    PlayerInputComponent->BindAction(TEXT("MountStormCharge"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormCharge);
+    PlayerInputComponent->BindAction(TEXT("MountLightningCrossing"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningCrossing);
+    PlayerInputComponent->BindAction(TEXT("MountStormLeap"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormLeap);
+    PlayerInputComponent->BindAction(TEXT("MountLightningShield"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningShield);
+    PlayerInputComponent->BindAction(TEXT("MountStormSummon"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormSummon);
+    PlayerInputComponent->BindAction(TEXT("MountThunderSense"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountThunderSense);
+    PlayerInputComponent->BindAction(TEXT("MountStormMode"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormMode);
 }
 
 void AALSAEQACharacter::MoveForward(float Value)
 {
-    if (RidingComponent && RidingComponent->IsRiding())
-    {
-        RidingComponent->MoveForward(Value);
-        return;
-    }
-
+    if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->MoveForward(Value); return; }
     if (Controller && !FMath::IsNearlyZero(Value))
     {
         const FRotator R(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
@@ -79,12 +84,7 @@ void AALSAEQACharacter::MoveForward(float Value)
 
 void AALSAEQACharacter::MoveRight(float Value)
 {
-    if (RidingComponent && RidingComponent->IsRiding())
-    {
-        RidingComponent->MoveRight(Value);
-        return;
-    }
-
+    if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->MoveRight(Value); return; }
     if (Controller && !FMath::IsNearlyZero(Value))
     {
         const FRotator R(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
@@ -97,198 +97,128 @@ void AALSAEQACharacter::Turn(float Value) { AddControllerYawInput(Value); }
 
 void AALSAEQACharacter::StartSprint()
 {
-    if (RidingComponent && RidingComponent->IsRiding())
-    {
-        RidingComponent->SetSprint(true);
-        return;
-    }
+    if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->SetSprint(true); return; }
     GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
 }
 
 void AALSAEQACharacter::StopSprint()
 {
-    if (RidingComponent && RidingComponent->IsRiding())
-    {
-        RidingComponent->SetSprint(false);
-        return;
-    }
+    if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->SetSprint(false); return; }
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
-bool AALSAEQACharacter::IsRiding() const
-{
-    return RidingComponent && RidingComponent->IsRiding();
-}
-
-bool AALSAEQACharacter::DismountCurrentMount()
-{
-    return RidingComponent && RidingComponent->Dismount();
-}
+bool AALSAEQACharacter::IsRiding() const { return RidingComponent && RidingComponent->IsRiding(); }
+bool AALSAEQACharacter::DismountCurrentMount() { return RidingComponent && RidingComponent->Dismount(); }
 
 bool AALSAEQACharacter::MountNearestTamedMount()
 {
-    if (!RidingComponent || RidingComponent->IsRiding())
-    {
-        return false;
-    }
-
+    if (!RidingComponent || RidingComponent->IsRiding()) return false;
     UWorld* World = GetWorld();
-    if (!World)
-    {
-        return false;
-    }
-
+    if (!World) return false;
     AALSAEQAMountActor* BestMount = nullptr;
     float BestDistanceSquared = FMath::Square(MountSearchRadius);
-
     for (TActorIterator<AALSAEQAMountActor> It(World); It; ++It)
     {
         AALSAEQAMountActor* Mount = *It;
-        if (!IsValid(Mount) || !Mount->GetMountComponent() || !Mount->GetMountComponent()->HasTamedMount() || Mount->HasRider())
-        {
-            continue;
-        }
-
+        if (!IsValid(Mount) || !Mount->GetMountComponent() || !Mount->GetMountComponent()->HasTamedMount() || Mount->HasRider()) continue;
         const float DistanceSquared = FVector::DistSquared(GetActorLocation(), Mount->GetActorLocation());
-        if (DistanceSquared <= BestDistanceSquared)
-        {
-            BestDistanceSquared = DistanceSquared;
-            BestMount = Mount;
-        }
+        if (DistanceSquared <= BestDistanceSquared) { BestDistanceSquared = DistanceSquared; BestMount = Mount; }
     }
-
     return BestMount && RidingComponent->TryMount(BestMount);
 }
 
-bool AALSAEQACharacter::MountOrDismount()
+bool AALSAEQACharacter::MountOrDismount() { return IsRiding() ? DismountCurrentMount() : MountNearestTamedMount(); }
+
+bool AALSAEQACharacter::ActivateMountAbility(EALSAEQAMountAbility Ability)
 {
-    if (IsRiding())
-    {
-        return DismountCurrentMount();
-    }
-    return MountNearestTamedMount();
+    if (!RidingComponent || !RidingComponent->IsRiding()) return false;
+    AALSAEQAMountActor* Mount = RidingComponent->GetCurrentMount();
+    UALSAEQAMountAbilityComponent* Abilities = Mount ? Mount->GetMountAbilityComponent() : nullptr;
+    return Abilities && Abilities->TryActivate(Ability);
 }
+
+void AALSAEQACharacter::ActivateMountLightningDash() { ActivateMountAbility(EALSAEQAMountAbility::LightningDash); }
+void AALSAEQACharacter::ActivateMountThunderRoar() { ActivateMountAbility(EALSAEQAMountAbility::ThunderRoar); }
+void AALSAEQACharacter::ActivateMountLightningKick() { ActivateMountAbility(EALSAEQAMountAbility::LightningKick); }
+void AALSAEQACharacter::ActivateMountStormCharge() { ActivateMountAbility(EALSAEQAMountAbility::StormCharge); }
+void AALSAEQACharacter::ActivateMountLightningCrossing() { ActivateMountAbility(EALSAEQAMountAbility::LightningCrossing); }
+void AALSAEQACharacter::ActivateMountStormLeap() { ActivateMountAbility(EALSAEQAMountAbility::StormLeap); }
+void AALSAEQACharacter::ActivateMountLightningShield() { ActivateMountAbility(EALSAEQAMountAbility::LightningShield); }
+void AALSAEQACharacter::ActivateMountStormSummon() { ActivateMountAbility(EALSAEQAMountAbility::StormSummon); }
+void AALSAEQACharacter::ActivateMountThunderSense() { ActivateMountAbility(EALSAEQAMountAbility::ThunderSense); }
+void AALSAEQACharacter::ActivateMountStormMode() { ActivateMountAbility(EALSAEQAMountAbility::StormMode); }
 
 void AALSAEQACharacter::PerformLightAttack() {}
 void AALSAEQACharacter::PerformHeavyAttack() {}
 
 void AALSAEQACharacter::BeginThunderCharge()
 {
-    if (ThunderChargeComponent && AbilityComponent && AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock))
-    {
-        ThunderChargeComponent->BeginCharge();
-    }
+    if (ThunderChargeComponent && AbilityComponent && AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock)) ThunderChargeComponent->BeginCharge();
 }
 
 int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
 {
     UWorld* World = GetWorld();
-    if (!World || Damage <= 0.0f)
-    {
-        return 0;
-    }
-
+    if (!World || Damage <= 0.0f) return 0;
     float StormMultiplier = 1.0f;
-    if (UALSAEQADynamicStormSubsystem* Storm = World->GetSubsystem<UALSAEQADynamicStormSubsystem>())
-    {
-        StormMultiplier = Storm->GetThunderMultiplier();
-    }
+    if (UALSAEQADynamicStormSubsystem* Storm = World->GetSubsystem<UALSAEQADynamicStormSubsystem>()) StormMultiplier = Storm->GetThunderMultiplier();
     const float FinalDamage = Damage * StormMultiplier;
-
     const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 45.0f);
     const FVector End = Start + GetActorForwardVector() * ThunderAttackRange;
     const FCollisionShape Shape = FCollisionShape::MakeSphere(ThunderAttackRadius);
     FCollisionQueryParams Params(SCENE_QUERY_STAT(ALSAEQAThunderRelease), false, this);
     Params.AddIgnoredActor(this);
-
     FCollisionObjectQueryParams ObjectTypes;
     ObjectTypes.AddObjectTypesToQuery(ECC_Pawn);
     ObjectTypes.AddObjectTypesToQuery(ECC_WorldDynamic);
-
     TArray<FHitResult> Hits;
     World->SweepMultiByObjectType(Hits, Start, End, FQuat::Identity, ObjectTypes, Shape, Params);
-
     TSet<AActor*> DamagedActors;
     int32 HitCount = 0;
     for (const FHitResult& Hit : Hits)
     {
         AActor* Target = Hit.GetActor();
-        if (!IsValid(Target) || DamagedActors.Contains(Target))
-        {
-            continue;
-        }
-
+        if (!IsValid(Target) || DamagedActors.Contains(Target)) continue;
         const FVector HitLocation = Hit.ImpactPoint.IsNearlyZero() ? Target->GetActorLocation() : Hit.ImpactPoint;
-
         if (Target->GetClass()->ImplementsInterface(UALSAEQADamageReceiver::StaticClass()))
         {
             FALSAEQADamageInfo DamageInfo;
-            DamageInfo.Amount = FinalDamage;
-            DamageInfo.Type = EALSAEQADamageType::Thunder;
-            DamageInfo.Instigator = this;
-            DamageInfo.HitLocation = HitLocation;
+            DamageInfo.Amount = FinalDamage; DamageInfo.Type = EALSAEQADamageType::Thunder; DamageInfo.Instigator = this; DamageInfo.HitLocation = HitLocation;
             IALSAEQADamageReceiver::Execute_ReceiveALSAEQADamage(Target, DamageInfo);
-            DamagedActors.Add(Target);
-            ++HitCount;
-            continue;
+            DamagedActors.Add(Target); ++HitCount; continue;
         }
-
         TArray<UALSAEQAThunderEnvironmentComponent*> EnvironmentComponents;
         Target->GetComponents<UALSAEQAThunderEnvironmentComponent>(EnvironmentComponents);
         for (UALSAEQAThunderEnvironmentComponent* Environment : EnvironmentComponents)
         {
-            if (!IsValid(Environment))
-            {
-                continue;
-            }
-
+            if (!IsValid(Environment)) continue;
             FALSAEQADamageInfo ThunderInfo;
-            ThunderInfo.Amount = FinalDamage;
-            ThunderInfo.Type = EALSAEQADamageType::Thunder;
-            ThunderInfo.Instigator = this;
-            ThunderInfo.HitLocation = HitLocation;
-            if (Environment->ReceiveThunder(ThunderInfo))
-            {
-                DamagedActors.Add(Target);
-                ++HitCount;
-                break;
-            }
+            ThunderInfo.Amount = FinalDamage; ThunderInfo.Type = EALSAEQADamageType::Thunder; ThunderInfo.Instigator = this; ThunderInfo.HitLocation = HitLocation;
+            if (Environment->ReceiveThunder(ThunderInfo)) { DamagedActors.Add(Target); ++HitCount; break; }
         }
     }
-
     return HitCount;
 }
 
 void AALSAEQACharacter::ReleaseThunderCharge()
 {
-    if (!ThunderChargeComponent || !AbilityComponent || !AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock))
-    {
-        return;
-    }
-
+    if (!ThunderChargeComponent || !AbilityComponent || !AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock)) return;
     const float ChargePercent = ThunderChargeComponent->GetChargePercent();
     const float Multiplier = ThunderChargeComponent->GetDamageMultiplier();
     constexpr float MinimumCharge = 0.15f;
     constexpr float ThunderShockCost = 12.0f;
-
     if (ChargePercent < MinimumCharge || Multiplier <= 0.0f || !AbilityComponent->ConsumeEnergy(ThunderShockCost))
     {
-        ThunderChargeComponent->CancelCharge();
-        return;
+        ThunderChargeComponent->CancelCharge(); return;
     }
-
     const float ReleasedPercent = ThunderChargeComponent->ReleaseCharge();
-    if (ReleasedPercent <= 0.0f)
-    {
-        return;
-    }
-
+    if (ReleasedPercent <= 0.0f) return;
     ApplyThunderReleaseToTargets(ThunderReleaseDamage * Multiplier);
 }
 
 void AALSAEQACharacter::CancelThunderCharge()
 {
-    if (ThunderChargeComponent) { ThunderChargeComponent->CancelCharge(); }
+    if (ThunderChargeComponent) ThunderChargeComponent->CancelCharge();
 }
 
 bool AALSAEQACharacter::ActivateAbility(EALSAEQAAbility Ability)
