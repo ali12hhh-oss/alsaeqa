@@ -3,6 +3,7 @@
 #include "Systems/ALSAEQAHealthComponent.h"
 #include "Companions/ALSAEQACompanionStoryComponent.h"
 #include "Companions/ALSAEQACompanionCaptureComponent.h"
+#include "Companions/ALSAEQARidingComponent.h"
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
 #include "Save/ALSAEQASaveManager.h"
@@ -14,6 +15,7 @@ AALSAEQACompanionCharacter::AALSAEQACompanionCharacter()
     HealthComponent = CreateDefaultSubobject<UALSAEQAHealthComponent>(TEXT("HealthComponent"));
     StoryComponent = CreateDefaultSubobject<UALSAEQACompanionStoryComponent>(TEXT("StoryComponent"));
     CaptureComponent = CreateDefaultSubobject<UALSAEQACompanionCaptureComponent>(TEXT("CaptureComponent"));
+    RidingComponent = CreateDefaultSubobject<UALSAEQARidingComponent>(TEXT("RidingComponent"));
 }
 
 void AALSAEQACompanionCharacter::SetBehaviorState(EALSAEQACompanionBehaviorState NewState)
@@ -35,6 +37,11 @@ void AALSAEQACompanionCharacter::SetCompanionId(FName NewCompanionId)
 
 bool AALSAEQACompanionCharacter::CaptureCompanion()
 {
+    if (RidingComponent && RidingComponent->IsRiding())
+    {
+        RidingComponent->Dismount();
+    }
+
     if (!CaptureComponent || !CaptureComponent->Capture())
     {
         return false;
