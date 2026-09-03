@@ -2,11 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Abilities/ALSAEQAAbilityTypes.h"
+#include "Abilities/ALSAEQAAbilityComponent.h"
 #include "ALSAEQACharacter.generated.h"
 
-class UALSAEQAAbilityComponent;
 class UALSAEQAHealthComponent;
+class UALSAEQAThunderChargeComponent;
 class USpringArmComponent;
 class UCameraComponent;
 
@@ -26,6 +26,15 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Combat")
     void PerformHeavyAttack();
 
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Thunder")
+    void BeginThunderCharge();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Thunder")
+    void ReleaseThunderCharge();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Thunder")
+    void CancelThunderCharge();
+
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Movement")
     void StartSprint();
 
@@ -40,6 +49,9 @@ public:
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Health")
     UALSAEQAHealthComponent* GetHealthComponent() const { return HealthComponent; }
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Thunder")
+    UALSAEQAThunderChargeComponent* GetThunderChargeComponent() const { return ThunderChargeComponent; }
 
 protected:
     virtual void BeginPlay() override;
@@ -61,9 +73,15 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components")
     TObjectPtr<UALSAEQAHealthComponent> HealthComponent;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components")
+    TObjectPtr<UALSAEQAThunderChargeComponent> ThunderChargeComponent;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement")
     float WalkSpeed = 360.0f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement")
     float SprintSpeed = 620.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder")
+    float ThunderReleaseDamage = 30.0f;
 };
