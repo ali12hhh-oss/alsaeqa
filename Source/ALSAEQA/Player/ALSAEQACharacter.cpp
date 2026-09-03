@@ -3,6 +3,7 @@
 #include "Storm/ALSAEQAThunderChargeComponent.h"
 #include "Storm/ALSAEQAThunderEnvironmentComponent.h"
 #include "Storm/ALSAEQADynamicStormSubsystem.h"
+#include "Story/ALSAEQALegacyComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/InputComponent.h"
@@ -28,6 +29,7 @@ AALSAEQACharacter::AALSAEQACharacter()
     AbilityComponent = CreateDefaultSubobject<UALSAEQAAbilityComponent>(TEXT("AbilityComponent"));
     HealthComponent = CreateDefaultSubobject<UALSAEQAHealthComponent>(TEXT("HealthComponent"));
     ThunderChargeComponent = CreateDefaultSubobject<UALSAEQAThunderChargeComponent>(TEXT("ThunderChargeComponent"));
+    LegacyComponent = CreateDefaultSubobject<UALSAEQALegacyComponent>(TEXT("LegacyComponent"));
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     GetCharacterMovement()->BrakingDecelerationWalking = 1800.0f;
     GetCharacterMovement()->AirControl = 0.35f;
