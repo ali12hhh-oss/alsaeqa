@@ -1,5 +1,7 @@
 #include "Status/ALSAEQAStatusComponent.h"
 
+#include "Systems/ALSAEQAHealthComponent.h"
+
 UALSAEQAStatusComponent::UALSAEQAStatusComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
@@ -8,16 +10,27 @@ UALSAEQAStatusComponent::UALSAEQAStatusComponent()
 void UALSAEQAStatusComponent::BeginPlay()
 {
     Super::BeginPlay();
+    HealthComponent = GetOwner() ? GetOwner()->FindComponentByClass<UALSAEQAHealthComponent>() : nullptr;
+    PoisonTickAccumulator = 0.0f;
 }
 
 void UALSAEQAStatusComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+    const float SafeDeltaTime = FMath::Max(DeltaTime, 0.0f);
+    PoisonTickAccumulator += SafeDeltaTime;
+
+    float PoisonDamagePerSecond = 0.0f;
     for (int32 Index = ActiveStatuses.Num() - 1; Index >= 0; --Index)
     {
         FALSAEQAStatusEffect& Effect = ActiveStatuses[Index];
-        Effect.RemainingTime -= DeltaTime;
+        Effect.RemainingTime -= SafeDeltaTime;
+
+        if (Effect.StatusId == FName(TEXT("Poison")) && Effect.RemainingTime > 0.0f)
+        {
+            PoisonDamagePerSecond = FMath::Max(PoisonDamagePerSecond, Effect.DamagePerSecond);
+        }
 
         if (Effect.RemainingTime <= 0.0f)
         {
@@ -25,6 +38,25 @@ void UALSAEQAStatusComponent::TickComponent(float DeltaTime, ELevelTick TickType
             ActiveStatuses.RemoveAtSwap(Index);
             OnStatusChanged.Broadcast(Id, false);
         }
+    }
+
+    if (PoisonDamagePerSecond > 0.0f && HealthComponent && !HealthComponent->IsDead())
+    {
+        while (PoisonTickAccumulator >= PoisonTickInterval)
+        {
+            PoisonTickAccumulator -= PoisonTickInterval;
+            HealthComponent->ApplyDamage(PoisonDamagePerSecond * PoisonTickInterval);
+
+            if (HealthComponent->IsDead())
+            {
+                PoisonTickAccumulator = 0.0f;
+                break;
+            }
+        }
+    }
+    else if (PoisonDamagePerSecond <= 0.0f)
+    {
+        PoisonTickAccumulator = 0.0f;
     }
 }
 
@@ -52,6 +84,7 @@ void UALSAEQAStatusComponent::ApplyPoison(float DamagePerSecond, float Duration)
     NewEffect.DamagePerSecond = DamagePerSecond;
     NewEffect.RemainingTime = Duration;
     ActiveStatuses.Add(NewEffect);
+    PoisonTickAccumulator = 0.0f;
     OnStatusChanged.Broadcast(PoisonId, true);
 }
 
@@ -64,6 +97,11 @@ void UALSAEQAStatusComponent::ClearStatus(FName StatusId)
             ActiveStatuses.RemoveAtSwap(Index);
             OnStatusChanged.Broadcast(StatusId, false);
         }
+    }
+
+    if (StatusId == FName(TEXT("Poison")))
+    {
+        PoisonTickAccumulator = 0.0f;
     }
 }
 
