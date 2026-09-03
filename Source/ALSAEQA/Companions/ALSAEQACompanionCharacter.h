@@ -8,6 +8,7 @@
 class UALSAEQAHealthComponent;
 class UALSAEQACompanionStoryComponent;
 class UALSAEQACompanionCaptureComponent;
+class UALSAEQARidingComponent;
 
 UENUM(BlueprintType)
 enum class EALSAEQACompanionBehaviorState : uint8
@@ -57,6 +58,9 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion")
     UALSAEQACompanionCaptureComponent* GetCaptureComponent() const { return CaptureComponent; }
 
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Companion")
+    UALSAEQARidingComponent* GetRidingComponent() const { return RidingComponent; }
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Companion")
     TObjectPtr<UALSAEQAHealthComponent> HealthComponent;
@@ -66,6 +70,9 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Companion")
     TObjectPtr<UALSAEQACompanionCaptureComponent> CaptureComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Companion")
+    TObjectPtr<UALSAEQARidingComponent> RidingComponent;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category="ALSAEQA|Companion")
     FName CompanionId = TEXT("PermanentCompanion");
