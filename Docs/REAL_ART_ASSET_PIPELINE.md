@@ -6,24 +6,32 @@ The final game presentation must use authored 3D meshes, skeletal characters, re
 
 ## Commercial-safe sources selected
 
-All selected Quaternius packs below explicitly permit use, modification and commercial use under CC0 / the current Quaternius Asset License. The repository must not redistribute the source packs as standalone asset packs.
+The following official Quaternius pages were checked on 2026-09-03. The listed packs are CC0/commercial-safe according to their pages; assets can be modified and used in commercial games. Do not redistribute the raw packs as standalone asset collections.
 
 | Production role | Source | Use |
 |---|---|---|
-| Hero + companion humanoid base | Universal Base Characters | Rigged game-ready human bases, male/female, retargetable |
-| Locomotion + combat | Universal Animation Library | 120+ humanoid animations, locomotion, combat, death, root-motion variants |
-| Advanced combat/parkour | Universal Animation Library 2 | 130+ combat combos, parkour and movement animations |
-| Fantasy weapons/props | Fantasy Props MegaKit | Swords, axes, tools, chests, furniture, environment props |
-| Town/city structures | Medieval Village MegaKit | Modular walls, floors, roofs, stairs and buildings |
+| Hero + companion humanoid base | Universal Base Characters | 6 rigged game-ready human bases, male/female, retargetable |
+| Locomotion + combat | Universal Animation Library | 120+ humanoid animations, locomotion, combat, death and more |
+| Advanced combat/parkour | Universal Animation Library 2 | 130+ combat, combo, parkour and movement animations |
+| Animals / mounts | Ultimate Animated Animal Pack | 12 animated animals with attack, death, gallop, walk, jump and other clips |
+| Monsters / enemy pool | Ultimate Monsters | 50 fully animated monsters |
+| Dungeon / ruins | Ultimate Modular Ruins | Modular ruins, dungeon pieces and props |
+| Fantasy weapons/props | Fantasy Props MegaKit | Weapons, tools, furniture, chests and world props |
+| Town/city structures | Medieval Village MegaKit | 300+ modular walls, floors, roofs, stairs and buildings |
 | Forest/rocks/vegetation | Stylized Nature MegaKit | Trees, plants, flowers, rocks, grass and bushes |
+| General RPG dressing | Ultimate RPG Pack | 100+ RPG models and props |
 
 Official source pages:
 - https://quaternius.com/packs/universalbasecharacters.html
 - https://quaternius.com/packs/universalanimationlibrary.html
 - https://quaternius.com/packs/universalanimationlibrary2.html
+- https://quaternius.com/packs/ultimateanimatedanimals.html
+- https://quaternius.com/packs/ultimatemonsters.html
+- https://quaternius.com/packs/ultimatemodularruins.html
 - https://quaternius.com/packs/fantasypropsmegakit.html
 - https://quaternius.com/packs/medievalvillagemegakit.html
 - https://quaternius.com/packs/stylizednaturemegakit.html
+- https://quaternius.com/packs/ultimaterpg.html
 - License: https://quaternius.com/license.html
 
 ## Import layout
@@ -69,7 +77,7 @@ Content/Art/
 - Distinct hero outfit assembled from modular fantasy clothing.
 - Thunder-themed material accents, not a primitive glow-only representation.
 - Real sword/weapon mesh attached to the hand socket.
-- Animation Blueprint: idle, walk, jog, sprint, jump, fall, land, light attack, heavy attack, hit reaction, dodge, thunder abilities, death.
+- Animation Blueprint: idle, walk, jog, sprint, jump, fall, land, light attack, heavy attack, hit reaction, dodge, thunder abilities and death.
 
 ### Companion
 - Separate female base character and outfit.
@@ -84,12 +92,12 @@ Content/Art/
 
 ### Mounts
 - Real skeletal animal/creature mesh.
-- Idle, walk, run, sprint, turn, jump, land, injured, mounted reaction animations.
+- Idle, walk, run, sprint, turn, jump, land and injured animations.
 - ThunderBeast receives its own emissive material/VFX layer and specialized ability montages.
 
 ## Animation retargeting
 
-The Quaternius Universal Animation Libraries are designed for retargeting and include Unreal-compatible GLB exports. Use the matching humanoid skeleton for the Universal Base Characters, then create an Unreal IK Rig / IK Retargeter pair.
+The Universal Animation Libraries are designed for retargeting and include Unreal-compatible exports. Use the matching humanoid skeleton for Universal Base Characters, then create an Unreal IK Rig / IK Retargeter pair.
 
 Required animation groups:
 
@@ -99,8 +107,9 @@ Required animation groups:
 4. Weapon: sword/axe/staff-style attacks and equip/unequip where compatible.
 5. State: injured, staggered, knockdown, death.
 6. Companion: independent locomotion, combat, rescue/capture/rejoin states.
+7. Creature: walk, run/gallop, turn, attack, hurt, death and special attacks.
 
-Root motion must be selected intentionally per montage. The newer Quaternius exports provide both root-motion and non-root-motion variants.
+Root motion must be selected intentionally per montage. Do not fake skeletal animation with transform oscillation once real assets are installed.
 
 ## Real environment production
 
@@ -117,7 +126,7 @@ The world remains one interconnected world. The following regions receive distin
 - Ice Kingdom: snow/ice materials, structures, frozen props and traversal hazards.
 - Land of Giants: oversized architecture, rocks, ancient structures and scale landmarks.
 
-The existing RuntimeWorldBuilder remains useful for development/testing, but its primitive/greybox output must be replaced progressively by these imported authored assets before final release.
+The existing RuntimeWorldBuilder remains useful for development/testing, but its primitive/greybox output must be replaced progressively by imported authored assets before final release.
 
 ## Weapons and props
 
@@ -145,4 +154,4 @@ Do **not** commit an asset merely because a website says it is downloadable. Kee
 
 ## Current limitation
 
-GitHub's connected file API available to this development session accepts UTF-8 text but cannot upload binary GLB/FBX/PNG/ZIP files. Therefore this commit adds the real-art acquisition/import pipeline rather than falsely claiming binary art packs have already been uploaded. The official pages above are the selected sources; the actual binary import must occur on the Unreal development machine/runner.
+GitHub's connected file API available to this development session accepts UTF-8 text but cannot upload binary GLB/FBX/PNG/ZIP files. Therefore the repository now contains the real-art integration point and acquisition specification rather than falsely claiming binary art packs have already been uploaded. The selected official sources are ready for the Unreal development machine/runner to import.
