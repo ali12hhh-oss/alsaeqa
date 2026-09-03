@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Companions/ALSAEQACompanionStoryTypes.h"
+#include "Companions/ALSAEQAMountTypes.h"
 #include "Save/ALSAEQASaveGame.h"
 #include "ALSAEQASaveManager.generated.h"
 
@@ -77,6 +78,15 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Companion")
     bool SetCompanionState(EALSAEQACompanionStoryState NewState);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mounts")
+    bool SaveTamedMount(const FALSAEQAMountProfile& Profile);
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Mounts")
+    bool HasTamedMount(FName MountId) const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Mounts")
+    FALSAEQAMountProfile GetTamedMount(FName MountId) const;
 
 private:
     static const FString SaveSlotName;
