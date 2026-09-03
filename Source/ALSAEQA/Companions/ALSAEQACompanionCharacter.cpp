@@ -5,6 +5,7 @@
 #include "Companions/ALSAEQACompanionCaptureComponent.h"
 #include "Companions/ALSAEQARidingComponent.h"
 #include "Companions/ALSAEQAMountActor.h"
+#include "Visual/ALSAEQAVisualAssetComponent.h"
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
 #include "Save/ALSAEQASaveManager.h"
@@ -16,6 +17,8 @@ AALSAEQACompanionCharacter::AALSAEQACompanionCharacter()
     StoryComponent = CreateDefaultSubobject<UALSAEQACompanionStoryComponent>(TEXT("StoryComponent"));
     CaptureComponent = CreateDefaultSubobject<UALSAEQACompanionCaptureComponent>(TEXT("CaptureComponent"));
     RidingComponent = CreateDefaultSubobject<UALSAEQARidingComponent>(TEXT("RidingComponent"));
+    VisualAssetComponent = CreateDefaultSubobject<UALSAEQAVisualAssetComponent>(TEXT("VisualAssetComponent"));
+    VisualAssetComponent->bApplyOnBeginPlay = true;
 }
 
 void AALSAEQACompanionCharacter::SetBehaviorState(EALSAEQACompanionBehaviorState NewState) { BehaviorState = NewState; }
