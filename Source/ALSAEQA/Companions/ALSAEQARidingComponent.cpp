@@ -36,6 +36,14 @@ bool UALSAEQARidingComponent::Dismount()
         return false;
     }
 
+    if (!Mount->HasRider())
+    {
+        CurrentMount.Reset();
+        CurrentMountId = NAME_None;
+        OnRidingStateChanged.Broadcast(false);
+        return true;
+    }
+
     if (!Mount->DismountRider())
     {
         return false;
@@ -49,15 +57,32 @@ bool UALSAEQARidingComponent::Dismount()
 
 bool UALSAEQARidingComponent::MoveForward(float Value)
 {
-    return CurrentMount.IsValid() && CurrentMount->MoveRiderForward(Value);
+    if (!IsRiding())
+    {
+        return false;
+    }
+    return CurrentMount->MoveRiderForward(Value);
 }
 
 bool UALSAEQARidingComponent::MoveRight(float Value)
 {
-    return CurrentMount.IsValid() && CurrentMount->MoveRiderRight(Value);
+    if (!IsRiding())
+    {
+        return false;
+    }
+    return CurrentMount->MoveRiderRight(Value);
 }
 
 bool UALSAEQARidingComponent::SetSprint(bool bEnabled)
 {
-    return CurrentMount.IsValid() && CurrentMount->SetRiderSprint(bEnabled);
+    if (!IsRiding())
+    {
+        return false;
+    }
+    return CurrentMount->SetRiderSprint(bEnabled);
+}
+
+bool UALSAEQARidingComponent::IsRiding() const
+{
+    return CurrentMount.IsValid() && CurrentMount->HasRider();
 }
