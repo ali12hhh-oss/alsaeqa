@@ -53,5 +53,8 @@ struct FALSAEQACompanionStoryProgress
     int32 FamilyEvidenceCount = 0;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category="Family Search")
+    TArray<FName> FamilyEvidenceIds;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category="Family Search")
     bool bFamilySearchCompleted = false;
 };
