@@ -45,9 +45,29 @@ void UALSAEQASaveManager::SetStage(int32 NewStage)
     SaveData->LastCheckpoint.Stage = FMath::Max(0, NewStage);
 }
 
+bool UALSAEQASaveManager::SaveCheckpoint(FName CheckpointId, FName RegionId, int32 Stage, FVector PlayerLocation, FRotator PlayerRotation)
+{
+    if (!EnsureSaveData() || CheckpointId.IsNone())
+    {
+        return false;
+    }
+
+    SaveData->LastCheckpoint.CheckpointId = CheckpointId;
+    SaveData->LastCheckpoint.RegionId = RegionId;
+    SaveData->LastCheckpoint.Stage = FMath::Max(0, Stage);
+    SaveData->LastCheckpoint.PlayerLocation = PlayerLocation;
+    SaveData->LastCheckpoint.PlayerRotation = PlayerRotation;
+    return SaveProgress();
+}
+
 int32 UALSAEQASaveManager::GetStage() const
 {
     return SaveData ? SaveData->LastCheckpoint.Stage : 0;
+}
+
+FALSAEQACheckpointData UALSAEQASaveManager::GetLastCheckpoint() const
+{
+    return SaveData ? SaveData->LastCheckpoint : FALSAEQACheckpointData();
 }
 
 bool UALSAEQASaveManager::RegisterMemory(FName MemoryId)
@@ -110,7 +130,6 @@ bool UALSAEQASaveManager::SetCompanionState(EALSAEQACompanionStoryState NewState
         return false;
     }
 
-    // Family revelation/search progression is unavailable before stage 25.
     if (NewState == EALSAEQACompanionStoryState::FamilyRevelation && !CanBeginFamilySearch())
     {
         return false;
