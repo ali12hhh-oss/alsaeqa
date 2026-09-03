@@ -1,6 +1,7 @@
 #include "Player/ALSAEQACharacter.h"
 #include "Systems/ALSAEQAHealthComponent.h"
 #include "Storm/ALSAEQAThunderChargeComponent.h"
+#include "Storm/ALSAEQAThunderEnvironmentComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/InputComponent.h"
@@ -95,35 +96,57 @@ int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
     const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 45.0f);
     const FVector End = Start + GetActorForwardVector() * ThunderAttackRange;
     const FCollisionShape Shape = FCollisionShape::MakeSphere(ThunderAttackRadius);
-
     FCollisionQueryParams Params(SCENE_QUERY_STAT(ALSAEQAThunderRelease), false, this);
     Params.AddIgnoredActor(this);
 
     TArray<FHitResult> Hits;
-    if (!World->SweepMultiByChannel(Hits, Start, End, FQuat::Identity, ECC_Pawn, Shape, Params))
-    {
-        return 0;
-    }
+    World->SweepMultiByChannel(Hits, Start, End, FQuat::Identity, ECC_Pawn, Shape, Params);
 
     TSet<AActor*> DamagedActors;
     int32 HitCount = 0;
     for (const FHitResult& Hit : Hits)
     {
         AActor* Target = Hit.GetActor();
-        if (!IsValid(Target) || DamagedActors.Contains(Target) ||
-            !Target->GetClass()->ImplementsInterface(UALSAEQADamageReceiver::StaticClass()))
+        if (!IsValid(Target) || DamagedActors.Contains(Target))
         {
             continue;
         }
 
-        FALSAEQADamageInfo DamageInfo;
-        DamageInfo.Amount = Damage;
-        DamageInfo.Type = EALSAEQADamageType::Thunder;
-        DamageInfo.Instigator = this;
-        DamageInfo.HitLocation = Hit.ImpactPoint.IsNearlyZero() ? Target->GetActorLocation() : Hit.ImpactPoint;
-        IALSAEQADamageReceiver::Execute_ReceiveALSAEQADamage(Target, DamageInfo);
-        DamagedActors.Add(Target);
-        ++HitCount;
+        const FVector TargetLocation = Target->GetActorLocation();
+        const FVector HitLocation = Hit.ImpactPoint.IsNearlyZero() ? TargetLocation : Hit.ImpactPoint;
+
+        if (Target->GetClass()->ImplementsInterface(UALSAEQADamageReceiver::StaticClass()))
+        {
+            FALSAEQADamageInfo DamageInfo;
+            DamageInfo.Amount = Damage;
+            DamageInfo.Type = EALSAEQADamageType::Thunder;
+            DamageInfo.Instigator = this;
+            DamageInfo.HitLocation = HitLocation;
+            IALSAEQADamageReceiver::Execute_ReceiveALSAEQADamage(Target, DamageInfo);
+            DamagedActors.Add(Target);
+            ++HitCount;
+            continue;
+        }
+
+        TArray<UALSAEQAThunderEnvironmentComponent*> EnvironmentComponents;
+        Target->GetComponents<UALSAEQAThunderEnvironmentComponent>(EnvironmentComponents);
+        for (UALSAEQAThunderEnvironmentComponent* Environment : EnvironmentComponents)
+        {
+            if (IsValid(Environment))
+            {
+                FALSAEQADamageInfo ThunderInfo;
+                ThunderInfo.Amount = Damage;
+                ThunderInfo.Type = EALSAEQADamageType::Thunder;
+                ThunderInfo.Instigator = this;
+                ThunderInfo.HitLocation = HitLocation;
+                if (Environment->ReceiveThunder(ThunderInfo))
+                {
+                    DamagedActors.Add(Target);
+                    ++HitCount;
+                    break;
+                }
+            }
+        }
     }
 
     return HitCount;
@@ -153,8 +176,7 @@ void AALSAEQACharacter::ReleaseThunderCharge()
         return;
     }
 
-    const float Damage = ThunderReleaseDamage * Multiplier;
-    ApplyThunderReleaseToTargets(Damage);
+    ApplyThunderReleaseToTargets(ThunderReleaseDamage * Multiplier);
 }
 
 void AALSAEQACharacter::CancelThunderCharge()
