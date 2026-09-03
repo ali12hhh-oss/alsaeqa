@@ -5,13 +5,36 @@
 
 AALSAEQAMountActor::AALSAEQAMountActor()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bStartWithTickEnabled = false;
+
     MountComponent = CreateDefaultSubobject<UALSAEQAMountComponent>(TEXT("MountComponent"));
 
     if (GetCharacterMovement())
     {
-        GetCharacterMovement()->MaxWalkSpeed = 650.0f;
+        BaseMovementSpeed = 650.0f;
+        GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
         GetCharacterMovement()->JumpZVelocity = 650.0f;
+    }
+}
+
+void AALSAEQAMountActor::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+
+    if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted() || !bRiderSprinting)
+    {
+        SetActorTickEnabled(false);
+        return;
+    }
+
+    if (!MountComponent->ConsumeStamina(StaminaPerSecondWhileSprinting * DeltaSeconds))
+    {
+        DismountRider();
+    }
+    else if (MountComponent->GetStamina() <= 0.0f)
+    {
+        DismountRider();
     }
 }
 
@@ -28,6 +51,9 @@ bool AALSAEQAMountActor::MountRider(AActor* NewRider)
     }
 
     Rider = NewRider;
+    bRiderSprinting = false;
+    SetActorTickEnabled(false);
+
     NewRider->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
     NewRider->SetActorRelativeLocation(RiderOffset);
     return true;
@@ -42,6 +68,57 @@ bool AALSAEQAMountActor::DismountRider()
 
     AActor* CurrentRider = Rider.Get();
     Rider.Reset();
+    bRiderSprinting = false;
+    SetActorTickEnabled(false);
     CurrentRider->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+    return true;
+}
+
+bool AALSAEQAMountActor::MoveRiderForward(float Value)
+{
+    if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted() || FMath::IsNearlyZero(Value))
+    {
+        return false;
+    }
+
+    AddMovementInput(GetActorForwardVector(), FMath::Clamp(Value, -1.0f, 1.0f));
+    return true;
+}
+
+bool AALSAEQAMountActor::MoveRiderRight(float Value)
+{
+    if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted() || FMath::IsNearlyZero(Value))
+    {
+        return false;
+    }
+
+    AddMovementInput(GetActorRightVector(), FMath::Clamp(Value, -1.0f, 1.0f));
+    return true;
+}
+
+bool AALSAEQAMountActor::SetRiderSprint(bool bEnabled)
+{
+    if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted())
+    {
+        bRiderSprinting = false;
+        SetActorTickEnabled(false);
+        if (GetCharacterMovement())
+        {
+            GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+        }
+        return false;
+    }
+
+    bRiderSprinting = bEnabled;
+    const FALSAEQAMountProfile Profile = MountComponent->GetMountProfile();
+    const float ProfileMultiplier = FMath::Max(Profile.MovementSpeedMultiplier, 0.1f);
+    const float SprintMultiplier = bRiderSprinting ? FMath::Max(SprintSpeedMultiplier, 1.0f) : 1.0f;
+
+    if (GetCharacterMovement())
+    {
+        GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed * ProfileMultiplier * SprintMultiplier;
+    }
+
+    SetActorTickEnabled(bRiderSprinting);
     return true;
 }
