@@ -45,4 +45,13 @@ struct FALSAEQACompanionStoryProgress
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
     TArray<FName> PersistentFlags;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category="Family Search")
+    int32 FamilySearchStage = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category="Family Search")
+    int32 FamilyEvidenceCount = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category="Family Search")
+    bool bFamilySearchCompleted = false;
 };
