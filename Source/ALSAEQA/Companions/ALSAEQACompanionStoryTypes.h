@@ -41,5 +41,8 @@ struct FALSAEQACompanionStoryProgress
     TArray<FName> CompletedSceneIds;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
+    TArray<FName> FamilyClueIds;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
     TArray<FName> PersistentFlags;
 };
