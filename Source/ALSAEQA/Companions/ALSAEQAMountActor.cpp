@@ -13,7 +13,6 @@ AALSAEQAMountActor::AALSAEQAMountActor()
     PrimaryActorTick.bStartWithTickEnabled = false;
     MountComponent = CreateDefaultSubobject<UALSAEQAMountComponent>(TEXT("MountComponent"));
     MountAbilityComponent = CreateDefaultSubobject<UALSAEQAMountAbilityComponent>(TEXT("MountAbilityComponent"));
-
     if (GetCharacterMovement())
     {
         BaseMovementSpeed = 650.0f;
@@ -64,7 +63,9 @@ bool AALSAEQAMountActor::Tame(const FALSAEQAMountProfile& Profile)
     UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
     UALSAEQASaveManager* SaveManager = GameInstance ? GameInstance->GetSubsystem<UALSAEQASaveManager>() : nullptr;
     if (SaveManager && SaveManager->GetStage() < FMath::Max(Profile.MinimumStage, 1)) return false;
-    return MountComponent->TameMount(Profile);
+    if (!MountComponent->TameMount(Profile)) return false;
+    if (SaveManager) SaveManager->SaveTamedMount(MountComponent->GetMountProfile());
+    return true;
 }
 
 bool AALSAEQAMountActor::MountRider(AActor* NewRider)
