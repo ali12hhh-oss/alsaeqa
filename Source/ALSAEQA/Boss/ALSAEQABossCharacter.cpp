@@ -18,6 +18,11 @@ void AALSAEQABossCharacter::BeginPlay()
     }
 }
 
+float AALSAEQABossCharacter::ReceiveALSAEQADamage_Implementation(const FALSAEQADamageInfo& DamageInfo)
+{
+    return ReceiveBossDamage(DamageInfo) ? DamageInfo.Amount : 0.0f;
+}
+
 bool AALSAEQABossCharacter::ReceiveBossDamage(const FALSAEQADamageInfo& DamageInfo)
 {
     if (!BossComponent || BossComponent->IsDefeated() || DamageInfo.Amount <= 0.0f)
@@ -47,9 +52,5 @@ void AALSAEQABossCharacter::HandleBossPhaseChanged(EALSAEQABossPhase NewPhase)
         SetEnemyState(EALSAEQAEnemyState::Dead);
         return;
     }
-
-    // Phase changes are intentionally exposed to Blueprint so each boss can
-    // replace attacks, arena hazards, VFX and movement without duplicating
-    // the health/phase state machine in C++.
     SetEnemyState(EALSAEQAEnemyState::Alert);
 }
