@@ -6,6 +6,7 @@
 #include "Creatures/ALSAEQAGiantSnake.generated.h"
 
 class UALSAEQAHealthComponent;
+class UALSAEQAResistanceComponent;
 
 UCLASS()
 class ALSAEQA_API AALSAEQAGiantSnake : public ACharacter, public IALSAEQADamageReceiver
@@ -32,6 +33,9 @@ public:
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Snake")
     TObjectPtr<UALSAEQAHealthComponent> HealthComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Snake")
+    TObjectPtr<UALSAEQAResistanceComponent> ResistanceComponent;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ALSAEQA|Snake")
     float AttackRange = 500.0f;
