@@ -7,7 +7,7 @@
 #include "Save/ALSAEQASaveManager.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/PlayerController.h"
 
 AALSAEQAGiantSnake::AALSAEQAGiantSnake()
 {
@@ -33,30 +33,26 @@ void AALSAEQAGiantSnake::Tick(float DeltaSeconds)
     }
 
     UWorld* World = GetWorld();
-    APawn* PlayerPawn = World ? World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr : nullptr;
+    APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+    APawn* PlayerPawn = PlayerController ? PlayerController->GetPawn() : nullptr;
     if (!IsValid(PlayerPawn))
     {
         return;
     }
 
-    const float DistanceSquared = FVector::DistSquared(GetActorLocation(), PlayerPawn->GetActorLocation());
-    if (DistanceSquared > FMath::Square(AttackRange))
+    if (FVector::DistSquared(GetActorLocation(), PlayerPawn->GetActorLocation()) > FMath::Square(AttackRange))
     {
         return;
     }
 
-    const int32 Stage = [&]()
+    int32 Stage = 1;
+    if (World && World->GetGameInstance())
     {
-        if (!World || !World->GetGameInstance())
-        {
-            return 1;
-        }
         if (UALSAEQASaveManager* SaveManager = World->GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
         {
-            return FMath::Max(1, SaveManager->GetStage());
+            Stage = FMath::Max(1, SaveManager->GetStage());
         }
-        return 1;
-    }();
+    }
 
     const float StageDamageMultiplier = 1.0f + (static_cast<float>(Stage - 1) * 0.012f);
     const bool bChargeAttack = bUseChargeAttack;
@@ -70,11 +66,6 @@ void AALSAEQAGiantSnake::Tick(float DeltaSeconds)
         DamageInfo.Instigator = this;
         DamageInfo.HitLocation = PlayerPawn->GetActorLocation();
         IALSAEQADamageReceiver::Execute_ReceiveALSAEQADamage(PlayerPawn, DamageInfo);
-
-        if (!bChargeAttack && StatusComponent)
-        {
-            StatusComponent = StatusComponent;
-        }
     }
 
     if (bChargeAttack)
