@@ -21,8 +21,14 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Save")
     void SetStage(int32 NewStage);
 
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Save")
+    bool SaveCheckpoint(FName CheckpointId, FName RegionId, int32 Stage, FVector PlayerLocation, FRotator PlayerRotation);
+
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Save")
     int32 GetStage() const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Save")
+    FALSAEQACheckpointData GetLastCheckpoint() const;
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Legacy")
     bool RegisterMemory(FName MemoryId);
