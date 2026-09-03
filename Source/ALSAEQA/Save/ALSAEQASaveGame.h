@@ -4,6 +4,7 @@
 #include "GameFramework/SaveGame.h"
 #include "Save/ALSAEQACheckpointTypes.h"
 #include "Companions/ALSAEQACompanionStoryTypes.h"
+#include "Companions/ALSAEQAMountTypes.h"
 #include "ALSAEQASaveGame.generated.h"
 
 UCLASS()
@@ -32,4 +33,7 @@ public:
 
     UPROPERTY(BlueprintReadWrite, SaveGame, Category="ALSAEQA|Companion")
     FALSAEQACompanionStoryProgress CompanionStory;
+
+    UPROPERTY(BlueprintReadWrite, SaveGame, Category="ALSAEQA|Mounts")
+    TArray<FALSAEQAMountProfile> TamedMountProfiles;
 };
