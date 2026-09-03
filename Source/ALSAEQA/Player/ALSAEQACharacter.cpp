@@ -4,13 +4,18 @@
 #include "Storm/ALSAEQAThunderEnvironmentComponent.h"
 #include "Storm/ALSAEQADynamicStormSubsystem.h"
 #include "Story/ALSAEQALegacyComponent.h"
+#include "Companions/ALSAEQARidingComponent.h"
+#include "Companions/ALSAEQAMountActor.h"
+#include "Companions/ALSAEQAMountComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/InputComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Combat/ALSAEQADamageTypes.h"
 #include "Combat/ALSAEQADamageReceiver.h"
 #include "Engine/World.h"
 #include "Engine/EngineTypes.h"
+#include "EngineUtils.h"
 #include "CollisionQueryParams.h"
 #include "CollisionShape.h"
 
@@ -30,6 +35,7 @@ AALSAEQACharacter::AALSAEQACharacter()
     HealthComponent = CreateDefaultSubobject<UALSAEQAHealthComponent>(TEXT("HealthComponent"));
     ThunderChargeComponent = CreateDefaultSubobject<UALSAEQAThunderChargeComponent>(TEXT("ThunderChargeComponent"));
     LegacyComponent = CreateDefaultSubobject<UALSAEQALegacyComponent>(TEXT("LegacyComponent"));
+    RidingComponent = CreateDefaultSubobject<UALSAEQARidingComponent>(TEXT("RidingComponent"));
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     GetCharacterMovement()->BrakingDecelerationWalking = 1800.0f;
     GetCharacterMovement()->AirControl = 0.35f;
@@ -51,12 +57,19 @@ void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
     PlayerInputComponent->BindAction(TEXT("HeavyAttack"), IE_Pressed, this, &AALSAEQACharacter::PerformHeavyAttack);
     PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Pressed, this, &AALSAEQACharacter::StartSprint);
     PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Released, this, &AALSAEQACharacter::StopSprint);
+    PlayerInputComponent->BindAction(TEXT("Mount"), IE_Pressed, this, &AALSAEQACharacter::MountOrDismount);
     PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Pressed, this, &AALSAEQACharacter::BeginThunderCharge);
     PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Released, this, &AALSAEQACharacter::ReleaseThunderCharge);
 }
 
 void AALSAEQACharacter::MoveForward(float Value)
 {
+    if (RidingComponent && RidingComponent->IsRiding())
+    {
+        RidingComponent->MoveForward(Value);
+        return;
+    }
+
     if (Controller && !FMath::IsNearlyZero(Value))
     {
         const FRotator R(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
@@ -66,6 +79,12 @@ void AALSAEQACharacter::MoveForward(float Value)
 
 void AALSAEQACharacter::MoveRight(float Value)
 {
+    if (RidingComponent && RidingComponent->IsRiding())
+    {
+        RidingComponent->MoveRight(Value);
+        return;
+    }
+
     if (Controller && !FMath::IsNearlyZero(Value))
     {
         const FRotator R(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
@@ -75,8 +94,81 @@ void AALSAEQACharacter::MoveRight(float Value)
 
 void AALSAEQACharacter::LookUp(float Value) { AddControllerPitchInput(Value); }
 void AALSAEQACharacter::Turn(float Value) { AddControllerYawInput(Value); }
-void AALSAEQACharacter::StartSprint() { GetCharacterMovement()->MaxWalkSpeed = SprintSpeed; }
-void AALSAEQACharacter::StopSprint() { GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; }
+
+void AALSAEQACharacter::StartSprint()
+{
+    if (RidingComponent && RidingComponent->IsRiding())
+    {
+        RidingComponent->SetSprint(true);
+        return;
+    }
+    GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+}
+
+void AALSAEQACharacter::StopSprint()
+{
+    if (RidingComponent && RidingComponent->IsRiding())
+    {
+        RidingComponent->SetSprint(false);
+        return;
+    }
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+bool AALSAEQACharacter::IsRiding() const
+{
+    return RidingComponent && RidingComponent->IsRiding();
+}
+
+bool AALSAEQACharacter::DismountCurrentMount()
+{
+    return RidingComponent && RidingComponent->Dismount();
+}
+
+bool AALSAEQACharacter::MountNearestTamedMount()
+{
+    if (!RidingComponent || RidingComponent->IsRiding())
+    {
+        return false;
+    }
+
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return false;
+    }
+
+    AALSAEQAMountActor* BestMount = nullptr;
+    float BestDistanceSquared = FMath::Square(MountSearchRadius);
+
+    for (TActorIterator<AALSAEQAMountActor> It(World); It; ++It)
+    {
+        AALSAEQAMountActor* Mount = *It;
+        if (!IsValid(Mount) || !Mount->GetMountComponent() || !Mount->GetMountComponent()->HasTamedMount() || Mount->HasRider())
+        {
+            continue;
+        }
+
+        const float DistanceSquared = FVector::DistSquared(GetActorLocation(), Mount->GetActorLocation());
+        if (DistanceSquared <= BestDistanceSquared)
+        {
+            BestDistanceSquared = DistanceSquared;
+            BestMount = Mount;
+        }
+    }
+
+    return BestMount && RidingComponent->TryMount(BestMount);
+}
+
+bool AALSAEQACharacter::MountOrDismount()
+{
+    if (IsRiding())
+    {
+        return DismountCurrentMount();
+    }
+    return MountNearestTamedMount();
+}
+
 void AALSAEQACharacter::PerformLightAttack() {}
 void AALSAEQACharacter::PerformHeavyAttack() {}
 
