@@ -10,12 +10,14 @@ AALSAEQAGiantSnake::AALSAEQAGiantSnake()
 
 float AALSAEQAGiantSnake::ReceiveALSAEQADamage_Implementation(const FALSAEQADamageInfo& DamageInfo)
 {
-    if (!HealthComponent)
+    if (!HealthComponent || DamageInfo.Amount <= 0.0f)
     {
         return 0.0f;
     }
 
-    return HealthComponent->ApplyDamage(DamageInfo.Amount);
+    // ApplyDamage is intentionally void; return the amount accepted by this receiver.
+    HealthComponent->ApplyDamage(DamageInfo.Amount);
+    return DamageInfo.Amount;
 }
 
 void AALSAEQAGiantSnake::StartAmbush()
