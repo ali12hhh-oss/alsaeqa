@@ -36,6 +36,12 @@ public:
     bool DismountRider();
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
+    bool InjureMount();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
+    bool ReleaseMount();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
     bool MoveRiderForward(float Value);
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Mount")
