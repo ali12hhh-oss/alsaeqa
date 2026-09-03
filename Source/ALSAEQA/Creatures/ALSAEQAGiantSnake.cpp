@@ -5,9 +5,11 @@
 #include "Status/ALSAEQAStatusComponent.h"
 #include "Combat/ALSAEQADamageReceiver.h"
 #include "Save/ALSAEQASaveManager.h"
+#include "Creatures/ALSAEQAGiantSnakeAIController.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AALSAEQAGiantSnake::AALSAEQAGiantSnake()
 {
@@ -15,6 +17,10 @@ AALSAEQAGiantSnake::AALSAEQAGiantSnake()
     HealthComponent = CreateDefaultSubobject<UALSAEQAHealthComponent>(TEXT("HealthComponent"));
     ResistanceComponent = CreateDefaultSubobject<UALSAEQAResistanceComponent>(TEXT("ResistanceComponent"));
     StatusComponent = CreateDefaultSubobject<UALSAEQAStatusComponent>(TEXT("StatusComponent"));
+
+    AIControllerClass = AALSAEQAGiantSnakeAIController::StaticClass();
+    AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+    GetCharacterMovement()->MaxWalkSpeed = 360.0f;
 }
 
 void AALSAEQAGiantSnake::Tick(float DeltaSeconds)
