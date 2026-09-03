@@ -32,7 +32,7 @@ public:
     bool SetSprint(bool bEnabled);
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Riding")
-    bool IsRiding() const { return CurrentMount.IsValid(); }
+    bool IsRiding() const;
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Riding")
     AALSAEQAMountActor* GetCurrentMount() const { return CurrentMount.Get(); }
