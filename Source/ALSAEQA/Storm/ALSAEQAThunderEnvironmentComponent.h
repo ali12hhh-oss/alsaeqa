@@ -18,7 +18,7 @@ enum class EALSAEQAThunderReaction : uint8
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FALSAEQAThunderEnvironmentChanged, EALSAEQAThunderReaction, Reaction, float, Charge);
 
 UCLASS(ClassGroup=(ALSAEQA), BlueprintType, Blueprintable, meta=(BlueprintSpawnableComponent))
-class ALSAEQA_API UALSAEQAThunderEnvironmentComponent : public UActorComponent
+class ALSAEQA_API UALSAEQAThunderEnvironmentComponent : public UActorComponent, public IALSAEQAThunderEnvironmentInterface
 {
     GENERATED_BODY()
 
@@ -52,9 +52,7 @@ public:
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Thunder Environment")
     FALSAEQAThunderEnvironmentChanged OnThunderEnvironmentChanged;
 
-protected:
-    UFUNCTION()
-    bool ReceiveThunderInteraction_Implementation(const FALSAEQADamageInfo& ThunderInfo);
+    virtual bool ReceiveThunderInteraction_Implementation(const FALSAEQADamageInfo& ThunderInfo) override;
 
 private:
     float ChargePercent = 0.0f;
