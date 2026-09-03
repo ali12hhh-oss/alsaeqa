@@ -4,6 +4,8 @@
 #include "Components/ActorComponent.h"
 #include "ALSAEQAStatusComponent.generated.h"
 
+class UALSAEQAHealthComponent;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FALSAEQAStatusChanged, FName, StatusId, bool, bActive);
 
 USTRUCT(BlueprintType)
@@ -50,4 +52,11 @@ protected:
 
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Status", SaveGame)
     TArray<FALSAEQAStatusEffect> ActiveStatuses;
+
+private:
+    UPROPERTY()
+    TObjectPtr<UALSAEQAHealthComponent> HealthComponent;
+
+    float PoisonTickAccumulator = 0.0f;
+    static constexpr float PoisonTickInterval = 0.1f;
 };
