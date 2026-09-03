@@ -38,6 +38,21 @@ void AALSAEQAMountActor::Tick(float DeltaSeconds)
     }
 }
 
+bool AALSAEQAMountActor::InitializeWildMount(const FALSAEQAMountProfile& Profile)
+{
+    return MountComponent && MountComponent->InitializeWildMount(Profile);
+}
+
+bool AALSAEQAMountActor::BeginTaming()
+{
+    return MountComponent && MountComponent->BeginTaming();
+}
+
+bool AALSAEQAMountActor::AddTamingProgress(float Amount)
+{
+    return MountComponent && MountComponent->AddTamingProgress(Amount);
+}
+
 bool AALSAEQAMountActor::Tame(const FALSAEQAMountProfile& Profile)
 {
     return MountComponent && MountComponent->TameMount(Profile);
@@ -70,6 +85,11 @@ bool AALSAEQAMountActor::DismountRider()
     Rider.Reset();
     bRiderSprinting = false;
     SetActorTickEnabled(false);
+    if (GetCharacterMovement())
+    {
+        const FALSAEQAMountProfile Profile = MountComponent->GetMountProfile();
+        GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed * FMath::Max(Profile.MovementSpeedMultiplier, 0.1f);
+    }
     CurrentRider->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
     return true;
 }
