@@ -5,6 +5,11 @@ AALSAEQABossCharacter::AALSAEQABossCharacter()
     BossComponent = CreateDefaultSubobject<UALSAEQABossComponent>(TEXT("BossComponent"));
     BossMaxHealth = 1200.0f;
     BossHealth = BossMaxHealth;
+    AttackDamage = 24.0f;
+    AttackCooldown = 1.10f;
+    AttackRange = 220.0f;
+    DetectionRange = 2200.0f;
+    ChaseSpeed = 460.0f;
 }
 
 void AALSAEQABossCharacter::BeginPlay()
@@ -47,10 +52,28 @@ bool AALSAEQABossCharacter::ReceiveBossDamage(const FALSAEQADamageInfo& DamageIn
 
 void AALSAEQABossCharacter::HandleBossPhaseChanged(EALSAEQABossPhase NewPhase)
 {
-    if (NewPhase == EALSAEQABossPhase::Defeated)
+    // Each phase increases combat pressure instead of only changing a UI state.
+    switch (NewPhase)
     {
+    case EALSAEQABossPhase::PhaseOne:
+        AttackDamage = 24.0f;
+        AttackCooldown = 1.10f;
+        ChaseSpeed = 460.0f;
+        break;
+    case EALSAEQABossPhase::PhaseTwo:
+        AttackDamage = 34.0f;
+        AttackCooldown = 0.90f;
+        ChaseSpeed = 485.0f;
+        break;
+    case EALSAEQABossPhase::PhaseThree:
+        AttackDamage = 48.0f;
+        AttackCooldown = 0.72f;
+        ChaseSpeed = 515.0f;
+        break;
+    case EALSAEQABossPhase::Defeated:
         SetEnemyState(EALSAEQAEnemyState::Dead);
         return;
     }
+
     SetEnemyState(EALSAEQAEnemyState::Alert);
 }
