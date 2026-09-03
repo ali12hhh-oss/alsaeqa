@@ -76,22 +76,64 @@ bool AALSAEQAMountActor::MountRider(AActor* NewRider)
 
 bool AALSAEQAMountActor::DismountRider()
 {
-    if (!Rider.IsValid() || !MountComponent || !MountComponent->Dismount())
+    if (!Rider.IsValid())
     {
+        bRiderSprinting = false;
+        SetActorTickEnabled(false);
         return false;
     }
 
     AActor* CurrentRider = Rider.Get();
+    if (MountComponent && MountComponent->IsMounted())
+    {
+        MountComponent->Dismount();
+    }
+
     Rider.Reset();
     bRiderSprinting = false;
     SetActorTickEnabled(false);
-    if (GetCharacterMovement())
+    if (GetCharacterMovement() && MountComponent)
     {
         const FALSAEQAMountProfile Profile = MountComponent->GetMountProfile();
         GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed * FMath::Max(Profile.MovementSpeedMultiplier, 0.1f);
     }
     CurrentRider->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
     return true;
+}
+
+bool AALSAEQAMountActor::InjureMount()
+{
+    if (!MountComponent)
+    {
+        return false;
+    }
+
+    const bool bWasMounted = MountComponent->IsMounted();
+    const bool bInjured = MountComponent->InjureMount();
+    if (bWasMounted && Rider.IsValid())
+    {
+        DismountRider();
+    }
+    return bInjured;
+}
+
+bool AALSAEQAMountActor::ReleaseMount()
+{
+    if (!MountComponent)
+    {
+        return false;
+    }
+
+    const bool bReleased = MountComponent->ReleaseMount();
+    if (Rider.IsValid())
+    {
+        AActor* CurrentRider = Rider.Get();
+        Rider.Reset();
+        bRiderSprinting = false;
+        SetActorTickEnabled(false);
+        CurrentRider->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+    }
+    return bReleased;
 }
 
 bool AALSAEQAMountActor::MoveRiderForward(float Value)
