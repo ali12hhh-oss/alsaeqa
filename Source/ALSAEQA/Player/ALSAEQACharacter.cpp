@@ -29,10 +29,7 @@ AALSAEQACharacter::AALSAEQACharacter()
     GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
 }
 
-void AALSAEQACharacter::BeginPlay()
-{
-    Super::BeginPlay();
-}
+void AALSAEQACharacter::BeginPlay() { Super::BeginPlay(); }
 
 void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -53,9 +50,8 @@ void AALSAEQACharacter::MoveForward(float Value)
 {
     if (Controller && !FMath::IsNearlyZero(Value))
     {
-        const FRotator ControlRotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0.0f, ControlRotation.Yaw, 0.0f);
-        AddMovementInput(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X), Value);
+        const FRotator R(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
+        AddMovementInput(FRotationMatrix(R).GetUnitAxis(EAxis::X), Value);
     }
 }
 
@@ -63,9 +59,8 @@ void AALSAEQACharacter::MoveRight(float Value)
 {
     if (Controller && !FMath::IsNearlyZero(Value))
     {
-        const FRotator ControlRotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0.0f, ControlRotation.Yaw, 0.0f);
-        AddMovementInput(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y), Value);
+        const FRotator R(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
+        AddMovementInput(FRotationMatrix(R).GetUnitAxis(EAxis::Y), Value);
     }
 }
 
@@ -92,7 +87,11 @@ void AALSAEQACharacter::ReleaseThunderCharge()
     }
 
     const float ChargePercent = ThunderChargeComponent->GetChargePercent();
-    if (ChargePercent < 0.15f || AbilityComponent->GetEnergy() < ThunderShockEnergyCost)
+    const float Multiplier = ThunderChargeComponent->GetDamageMultiplier();
+    constexpr float MinimumCharge = 0.15f;
+    constexpr float ThunderShockCost = 12.0f;
+
+    if (ChargePercent < MinimumCharge || Multiplier <= 0.0f || !AbilityComponent->ConsumeEnergy(ThunderShockCost))
     {
         ThunderChargeComponent->CancelCharge();
         return;
@@ -104,16 +103,13 @@ void AALSAEQACharacter::ReleaseThunderCharge()
         return;
     }
 
-    AbilityComponent->ConsumeEnergy(ThunderShockEnergyCost);
-
     const FALSAEQADamageInfo DamageInfo{
-        ThunderReleaseDamage * ThunderChargeComponent->GetReleasedDamageMultiplier(ReleasedPercent),
+        ThunderReleaseDamage * Multiplier,
         EALSAEQADamageType::Thunder,
         this,
         GetActorLocation() + GetActorForwardVector() * 120.0f
     };
-    LastThunderDamage = DamageInfo.Amount;
-    LastThunderDamageInfo = DamageInfo;
+    (void)DamageInfo;
 }
 
 void AALSAEQACharacter::CancelThunderCharge()
