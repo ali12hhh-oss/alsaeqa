@@ -8,6 +8,42 @@ UALSAEQACompanionStoryComponent::UALSAEQACompanionStoryComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UALSAEQACompanionStoryComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    SynchronizeFromSaveManager(true);
+}
+
+void UALSAEQACompanionStoryComponent::SynchronizeFromSaveManager(bool bBroadcastUnlock)
+{
+    UWorld* World = GetWorld();
+    UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
+    UALSAEQASaveManager* SaveManager = GameInstance ? GameInstance->GetSubsystem<UALSAEQASaveManager>() : nullptr;
+    if (!SaveManager)
+    {
+        return;
+    }
+
+    const FALSAEQACompanionStoryProgress SavedProgress = SaveManager->GetCompanionStory();
+    const bool bWasUnlocked = Progress.PersistentFlags.Contains(TEXT("FamilySearchUnlocked"));
+
+    Progress = SavedProgress;
+
+    if (SaveManager->CanBeginFamilySearch() && !Progress.bFamilySearchCompleted)
+    {
+        Progress.FamilySearchStage = FMath::Max(25, Progress.FamilySearchStage);
+        if (!Progress.PersistentFlags.Contains(TEXT("FamilySearchUnlocked")))
+        {
+            Progress.PersistentFlags.Add(TEXT("FamilySearchUnlocked"));
+        }
+
+        if (bBroadcastUnlock && !bWasUnlocked)
+        {
+            OnFamilySearchUnlocked.Broadcast(Progress.FamilySearchStage);
+        }
+    }
+}
+
 bool UALSAEQACompanionStoryComponent::SetState(EALSAEQACompanionStoryState NewState)
 {
     UWorld* World = GetWorld();
@@ -21,24 +57,7 @@ bool UALSAEQACompanionStoryComponent::SetState(EALSAEQACompanionStoryState NewSt
 
     Progress.State = NewState;
     OnStateChanged.Broadcast(NewState);
-
-    // The family-search event is stage-gated at 25. Synchronize the local
-    // component from the persistent save state and broadcast the unlock once.
-    if (SaveManager && SaveManager->CanBeginFamilySearch())
-    {
-        const FALSAEQACompanionStoryProgress SavedProgress = SaveManager->GetCompanionStory();
-        Progress.FamilySearchStage = SavedProgress.FamilySearchStage;
-        Progress.FamilyEvidenceCount = SavedProgress.FamilyEvidenceCount;
-        Progress.FamilyEvidenceIds = SavedProgress.FamilyEvidenceIds;
-        Progress.bFamilySearchCompleted = SavedProgress.bFamilySearchCompleted;
-
-        if (SavedProgress.FamilySearchStage >= 25 && !Progress.bFamilySearchCompleted && !Progress.PersistentFlags.Contains(TEXT("FamilySearchUnlocked")))
-        {
-            Progress.PersistentFlags.Add(TEXT("FamilySearchUnlocked"));
-            OnFamilySearchUnlocked.Broadcast(SavedProgress.FamilySearchStage);
-        }
-    }
-
+    SynchronizeFromSaveManager(true);
     return true;
 }
 
@@ -56,14 +75,7 @@ bool UALSAEQACompanionStoryComponent::DiscoverFamilyClue(FName ClueId)
     // Clues are intentionally allowed before stage 25; they never start the family search.
     if (SaveManager && SaveManager->AddFamilyClue(ClueId))
     {
-        const FALSAEQACompanionStoryProgress SavedProgress = SaveManager->GetCompanionStory();
-        Progress.FamilyClueCount = SavedProgress.FamilyClueCount;
-        Progress.FamilyClueIds = SavedProgress.FamilyClueIds;
-        Progress.FamilySearchStage = SavedProgress.FamilySearchStage;
-        Progress.FamilyEvidenceCount = SavedProgress.FamilyEvidenceCount;
-        Progress.FamilyEvidenceIds = SavedProgress.FamilyEvidenceIds;
-        Progress.bFamilySearchCompleted = SavedProgress.bFamilySearchCompleted;
-        Progress.State = SavedProgress.State;
+        SynchronizeFromSaveManager(true);
         return true;
     }
 
