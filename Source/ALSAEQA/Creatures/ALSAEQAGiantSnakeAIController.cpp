@@ -1,6 +1,7 @@
 #include "Creatures/ALSAEQAGiantSnakeAIController.h"
 
 #include "GameFramework/Pawn.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Creatures/ALSAEQAGiantSnake.h"
 
@@ -37,14 +38,31 @@ void AALSAEQAGiantSnakeAIController::SetSnakeState(EALSAEQAGiantSnakeState NewSt
     switch (State)
     {
     case EALSAEQAGiantSnakeState::Ambush:
+        StopMovement();
         Snake->StartAmbush();
         break;
+    case EALSAEQAGiantSnakeState::Attack:
+        StopMovement();
+        break;
     case EALSAEQAGiantSnakeState::Coil:
+        StopMovement();
         Snake->CoilAroundObstacle();
         break;
     case EALSAEQAGiantSnakeState::Retreat:
+        StopMovement();
         Snake->Retreat();
         break;
+    case EALSAEQAGiantSnakeState::Hidden:
+        StopMovement();
+        break;
+    case EALSAEQAGiantSnakeState::Defeated:
+        StopMovement();
+        if (Snake->GetCharacterMovement())
+        {
+            Snake->GetCharacterMovement()->DisableMovement();
+        }
+        break;
+    case EALSAEQAGiantSnakeState::Chase:
     default:
         break;
     }
@@ -66,13 +84,14 @@ void AALSAEQAGiantSnakeAIController::Tick(float DeltaSeconds)
         return;
     }
 
-    if (!TargetActor)
+    if (!IsValid(TargetActor))
     {
         TargetActor = UGameplayStatics::GetPlayerPawn(this, 0);
     }
 
-    if (!TargetActor)
+    if (!IsValid(TargetActor))
     {
+        SetSnakeState(EALSAEQAGiantSnakeState::Hidden);
         return;
     }
 
@@ -85,9 +104,11 @@ void AALSAEQAGiantSnakeAIController::Tick(float DeltaSeconds)
     else if (Distance <= DetectionRange)
     {
         SetSnakeState(EALSAEQAGiantSnakeState::Chase);
+        MoveToActor(TargetActor, AttackRange * 0.75f, true);
     }
     else
     {
+        TargetActor = nullptr;
         SetSnakeState(EALSAEQAGiantSnakeState::Hidden);
     }
 }
