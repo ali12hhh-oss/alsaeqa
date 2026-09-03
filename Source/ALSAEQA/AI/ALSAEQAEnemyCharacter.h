@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Combat/ALSAEQADamageReceiver.h"
 #include "AI/ALSAEQAEnemyCharacter.generated.h"
 
 class UALSAEQAHealthComponent;
@@ -19,7 +20,7 @@ enum class EALSAEQAEnemyState : uint8
 };
 
 UCLASS()
-class ALSAEQA_API AALSAEQAEnemyCharacter : public ACharacter
+class ALSAEQA_API AALSAEQAEnemyCharacter : public ACharacter, public IALSAEQADamageReceiver
 {
     GENERATED_BODY()
 
@@ -41,8 +42,13 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Health")
     UALSAEQAHealthComponent* GetHealthComponent() const { return HealthComponent; }
 
+    virtual float ReceiveALSAEQADamage_Implementation(const FALSAEQADamageInfo& DamageInfo) override;
+
 protected:
     virtual void BeginPlay() override;
+
+    UFUNCTION()
+    void HandleDeath();
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components")
     TObjectPtr<UALSAEQAHealthComponent> HealthComponent;
