@@ -2,6 +2,9 @@
 
 #include "Companions/ALSAEQAMountComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/World.h"
+#include "Engine/GameInstance.h"
+#include "Save/ALSAEQASaveManager.h"
 
 AALSAEQAMountActor::AALSAEQAMountActor()
 {
@@ -45,7 +48,21 @@ bool AALSAEQAMountActor::InitializeWildMount(const FALSAEQAMountProfile& Profile
 
 bool AALSAEQAMountActor::BeginTaming()
 {
-    return MountComponent && MountComponent->BeginTaming();
+    if (!MountComponent)
+    {
+        return false;
+    }
+
+    const FALSAEQAMountProfile Profile = MountComponent->GetMountProfile();
+    UWorld* World = GetWorld();
+    UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
+    UALSAEQASaveManager* SaveManager = GameInstance ? GameInstance->GetSubsystem<UALSAEQASaveManager>() : nullptr;
+    if (SaveManager && SaveManager->GetStage() < FMath::Max(Profile.MinimumStage, 1))
+    {
+        return false;
+    }
+
+    return MountComponent->BeginTaming();
 }
 
 bool AALSAEQAMountActor::AddTamingProgress(float Amount)
@@ -55,7 +72,20 @@ bool AALSAEQAMountActor::AddTamingProgress(float Amount)
 
 bool AALSAEQAMountActor::Tame(const FALSAEQAMountProfile& Profile)
 {
-    return MountComponent && MountComponent->TameMount(Profile);
+    if (!MountComponent)
+    {
+        return false;
+    }
+
+    UWorld* World = GetWorld();
+    UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
+    UALSAEQASaveManager* SaveManager = GameInstance ? GameInstance->GetSubsystem<UALSAEQASaveManager>() : nullptr;
+    if (SaveManager && SaveManager->GetStage() < FMath::Max(Profile.MinimumStage, 1))
+    {
+        return false;
+    }
+
+    return MountComponent->TameMount(Profile);
 }
 
 bool AALSAEQAMountActor::MountRider(AActor* NewRider)
@@ -74,69 +104,22 @@ bool AALSAEQAMountActor::MountRider(AActor* NewRider)
     return true;
 }
 
-bool AALSAEQAMountActor::DismountRider()
+bool AALSAEQACharacter::DismountRider()
 {
-    if (!Rider.IsValid())
-    {
-        bRiderSprinting = false;
-        SetActorTickEnabled(false);
-        return false;
-    }
-
-    AActor* CurrentRider = Rider.Get();
-    if (MountComponent && MountComponent->IsMounted())
-    {
-        MountComponent->Dismount();
-    }
-
-    Rider.Reset();
-    bRiderSprinting = false;
-    SetActorTickEnabled(false);
-    if (GetCharacterMovement() && MountComponent)
-    {
-        const FALSAEQAMountProfile Profile = MountComponent->GetMountProfile();
-        GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed * FMath::Max(Profile.MovementSpeedMultiplier, 0.1f);
-    }
-    CurrentRider->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-    return true;
+    return false;
 }
 
-bool AALSAEQAMountActor::InjureMount()
+bool AALSAEQACharacter::InjureMount()
 {
-    if (!MountComponent)
-    {
-        return false;
-    }
-
-    const bool bWasMounted = MountComponent->IsMounted();
-    const bool bInjured = MountComponent->InjureMount();
-    if (bWasMounted && Rider.IsValid())
-    {
-        DismountRider();
-    }
-    return bInjured;
+    return false;
 }
 
-bool AALSAEQAMountActor::ReleaseMount()
+bool AALSAEQACharacter::ReleaseMount()
 {
-    if (!MountComponent)
-    {
-        return false;
-    }
-
-    const bool bReleased = MountComponent->ReleaseMount();
-    if (Rider.IsValid())
-    {
-        AActor* CurrentRider = Rider.Get();
-        Rider.Reset();
-        bRiderSprinting = false;
-        SetActorTickEnabled(false);
-        CurrentRider->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-    }
-    return bReleased;
+    return false;
 }
 
-bool AALSAEQAMountActor::MoveRiderForward(float Value)
+bool AALSAEQACharacter::MoveRiderForward(float Value)
 {
     if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted() || FMath::IsNearlyZero(Value))
     {
@@ -147,7 +130,7 @@ bool AALSAEQAMountActor::MoveRiderForward(float Value)
     return true;
 }
 
-bool AALSAEQAMountActor::MoveRiderRight(float Value)
+bool AALSAEQACharacter::MoveRiderRight(float Value)
 {
     if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted() || FMath::IsNearlyZero(Value))
     {
@@ -158,7 +141,7 @@ bool AALSAEQAMountActor::MoveRiderRight(float Value)
     return true;
 }
 
-bool AALSAEQAMountActor::SetRiderSprint(bool bEnabled)
+bool AALSAEQACharacter::SetRiderSprint(bool bEnabled)
 {
     if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted())
     {
