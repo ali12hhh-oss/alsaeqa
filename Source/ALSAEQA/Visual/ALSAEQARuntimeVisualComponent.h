@@ -3,6 +3,7 @@
 #include "Components/ActorComponent.h"
 #include "ALSAEQARuntimeVisualComponent.generated.h"
 
+class UALSAEQAArtProfile;
 class USkeletalMesh;
 class UAnimInstance;
 class USkeletalMeshComponent;
@@ -27,7 +28,8 @@ protected:
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="ALSAEQA|Visual") bool bBuildOnBeginPlay=true;
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="ALSAEQA|Visual") bool bAddWeapon=true;
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="ALSAEQA|Visual") bool bAddStormLight=true;
- UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="ALSAEQA|Real Art",meta=(ToolTip="Assign the imported game-ready skeletal mesh for this role. If empty, the legacy procedural fallback is used.")) TSoftObjectPtr<USkeletalMesh> ImportedSkeletalMesh;
+ UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="ALSAEQA|Real Art",meta=(ToolTip="Preferred source of truth for final imported 3D art. Assign a UALSAEQAArtProfile asset after importing the real mesh and animations.")) TSoftObjectPtr<UALSAEQAArtProfile> ArtProfile;
+ UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="ALSAEQA|Real Art",meta=(ToolTip="Direct imported skeletal mesh override. Used when ArtProfile is empty.")) TSoftObjectPtr<USkeletalMesh> ImportedSkeletalMesh;
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="ALSAEQA|Real Art",meta=(ToolTip="Optional animation blueprint class. Leave empty to use the mesh's configured Anim Class.")) TSubclassOf<UAnimInstance> ImportedAnimClass;
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="ALSAEQA|Real Art") FVector ImportedRelativeLocation=FVector::ZeroVector;
  UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="ALSAEQA|Real Art") FRotator ImportedRelativeRotation=FRotator::ZeroRotator;
