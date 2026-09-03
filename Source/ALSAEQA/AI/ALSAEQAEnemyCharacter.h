@@ -46,4 +46,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float ChaseSpeed = 430.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float DetectionRange = 1600.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float AttackRange = 180.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float AttackDamage = 12.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float AttackCooldown = 1.25f;
+
+private:
+    float AttackCooldownRemaining = 0.0f;
 };
