@@ -24,34 +24,17 @@ class ALSAEQA_API UALSAEQAAbilityComponent : public UActorComponent
 
 public:
     UALSAEQAAbilityComponent();
-
-    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities")
-    bool UnlockAbility(EALSAEQAAbility Ability);
-
-    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities")
-    bool HasAbility(EALSAEQAAbility Ability) const;
-
-    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities")
-    bool TryActivateAbility(EALSAEQAAbility Ability);
-
-    UFUNCTION(BlueprintPure, Category="ALSAEQA|Abilities")
-    float GetEnergy() const { return Energy; }
-
-    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities")
-    void RestoreEnergy(float Amount);
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities") bool UnlockAbility(EALSAEQAAbility Ability);
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities") bool HasAbility(EALSAEQAAbility Ability) const;
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities") bool TryActivateAbility(EALSAEQAAbility Ability);
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities") bool ConsumeEnergy(float Amount);
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Abilities") float GetEnergy() const { return Energy; }
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Abilities") void RestoreEnergy(float Amount);
 
 protected:
     virtual void BeginPlay() override;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Energy")
-    float MaxEnergy = 100.0f;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Energy")
-    float Energy = 100.0f;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Energy")
-    TMap<EALSAEQAAbility, float> AbilityCosts;
-
-    UPROPERTY(BlueprintReadOnly, Category="Abilities")
-    TSet<EALSAEQAAbility> UnlockedAbilities;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Energy") float MaxEnergy = 100.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Energy") float Energy = 100.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Energy") TMap<EALSAEQAAbility, float> AbilityCosts;
+    UPROPERTY(BlueprintReadOnly, Category="Abilities") TSet<EALSAEQAAbility> UnlockedAbilities;
 };
