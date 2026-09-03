@@ -60,6 +60,11 @@ protected:
     void ActivateMountThunderSense();
     void ActivateMountStormMode();
 
+    UFUNCTION()
+    void HandlePlayerDeath();
+
+    void RespawnAtCheckpoint();
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<USpringArmComponent> CameraBoom;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UCameraComponent> FollowCamera;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAAbilityComponent> AbilityComponent;
@@ -76,8 +81,12 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder") float ThunderReleaseDamage = 30.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder") float ThunderAttackRange = 650.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder") float ThunderAttackRadius = 90.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Death") float DeathRespawnDelay = 1.75f;
 
 private:
     int32 ApplyThunderReleaseToTargets(float Damage);
     bool PerformMeleeStrike(bool bHeavy);
+
+    FTimerHandle RespawnTimerHandle;
+    bool bDeathInProgress = false;
 };
