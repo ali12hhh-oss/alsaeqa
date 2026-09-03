@@ -12,7 +12,8 @@ public class ALSAEQA : ModuleRules
             "CoreUObject",
             "Engine",
             "InputCore",
-            "AIModule"
+            "AIModule",
+            "ProceduralMeshComponent"
         });
 
         PrivateDependencyModuleNames.AddRange(new[]
