@@ -11,6 +11,7 @@ class UALSAEQAHealthComponent;
 class UALSAEQAThunderChargeComponent;
 class UALSAEQALegacyComponent;
 class UALSAEQARidingComponent;
+class UALSAEQAVisualAssetComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class AALSAEQAMountActor;
@@ -42,6 +43,7 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Health") UALSAEQAHealthComponent* GetHealthComponent() const { return HealthComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Thunder") UALSAEQAThunderChargeComponent* GetThunderChargeComponent() const { return ThunderChargeComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Legacy") UALSAEQALegacyComponent* GetLegacyComponent() const { return LegacyComponent; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Visual") UALSAEQAVisualAssetComponent* GetVisualAssetComponent() const { return VisualAssetComponent; }
 
 protected:
     virtual void BeginPlay() override;
@@ -73,6 +75,7 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAThunderChargeComponent> ThunderChargeComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQALegacyComponent> LegacyComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQARidingComponent> RidingComponent;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAVisualAssetComponent> VisualAssetComponent;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float WalkSpeed = 360.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float SprintSpeed = 620.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Riding") float MountSearchRadius = 450.0f;
