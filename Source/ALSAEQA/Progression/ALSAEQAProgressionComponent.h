@@ -43,6 +43,9 @@ public:
     int32 GetWeaponRequiredStage(EALSAEQAWeapon Weapon) const;
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    bool HasCompletedDiscovery(FName DiscoveryId) const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
     int32 GetCurrentStage() const { return CurrentStage; }
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Progression")
@@ -62,4 +65,7 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, SaveGame, Category="ALSAEQA|Progression")
     TSet<EALSAEQAWeapon> AcquiredWeapons;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, SaveGame, Category="ALSAEQA|Progression")
+    TSet<FName> CompletedDiscoveries;
 };
