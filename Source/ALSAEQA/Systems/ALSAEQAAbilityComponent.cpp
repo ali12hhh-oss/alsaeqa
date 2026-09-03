@@ -29,22 +29,24 @@ bool UALSAEQAAbilityComponent::HasAbility(EALSAEQAAbility Ability) const
     return UnlockedAbilities.Contains(Ability);
 }
 
+bool UALSAEQAAbilityComponent::ConsumeEnergy(float Amount)
+{
+    if (Amount <= 0.0f || Energy < Amount)
+    {
+        return false;
+    }
+    Energy -= Amount;
+    return true;
+}
+
 bool UALSAEQAAbilityComponent::TryActivateAbility(EALSAEQAAbility Ability)
 {
     if (!HasAbility(Ability))
     {
         return false;
     }
-
     const float* Cost = AbilityCosts.Find(Ability);
-    const float RequiredEnergy = Cost ? *Cost : 0.0f;
-    if (Energy < RequiredEnergy)
-    {
-        return false;
-    }
-
-    Energy -= RequiredEnergy;
-    return true;
+    return ConsumeEnergy(Cost ? *Cost : 0.0f);
 }
 
 void UALSAEQAAbilityComponent::RestoreEnergy(float Amount)
