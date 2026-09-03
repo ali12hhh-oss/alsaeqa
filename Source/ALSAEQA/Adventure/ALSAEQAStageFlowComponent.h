@@ -24,6 +24,11 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Adventure") int32 GetCurrentStageNumber() const { return CurrentStage.StageNumber; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Adventure") bool IsStageStillActive() const { return bStageActive; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Adventure") bool WasBeatSeen(FName BeatId) const { return SeenBeatIds.Contains(BeatId); }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Difficulty") float GetDifficultyRating() const { return CurrentStage.DifficultyRating; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Difficulty") float GetEnemyHealthMultiplier() const { return CurrentStage.EnemyHealthMultiplier; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Difficulty") float GetEnemyDamageMultiplier() const { return CurrentStage.EnemyDamageMultiplier; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Difficulty") float GetEnemyAggressionMultiplier() const { return CurrentStage.EnemyAggressionMultiplier; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Difficulty") float GetHazardMultiplier() const { return CurrentStage.HazardMultiplier; }
 
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Adventure") FALSAEQAStageEvent OnStageEntered;
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Adventure") FALSAEQAStageEvent OnStageAdvanced;
