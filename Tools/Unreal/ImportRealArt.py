@@ -1,8 +1,8 @@
 """Unreal Editor Python helper for ALSAEQA real-art import.
 
-Run with Unreal Editor's Python plugin enabled. The script creates the final
-Content/Art folder contract, scans imported assets, and reports what still
-needs to be wired. It intentionally does not create fake meshes.
+This tool only prepares folders and audits authored imported assets.
+It NEVER creates primitives, procedural geometry, greyboxes, placeholders,
+or visual fallbacks.
 """
 import unreal
 
@@ -49,13 +49,14 @@ def audit():
             continue
         kind = classify(obj)
         counts[kind] = counts.get(kind, 0) + 1
+
     unreal.log("=== ALSAEQA REAL ART AUDIT ===")
     unreal.log(f"Root: {ROOT}")
     for kind in sorted(counts):
         unreal.log(f"{kind}: {counts[kind]}")
+
     if not counts:
-        unreal.log_warning("No real art assets imported yet. Import approved GLB/FBX packs before wiring actors.")
-    unreal.log("Primitive runtime visuals remain fallback only.")
+        unreal.log_warning("No authored art assets are imported. Import an approved real-art source first.")
     return counts
 
 
