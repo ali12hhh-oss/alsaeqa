@@ -37,6 +37,12 @@ public:
     bool IsWeaponAvailable(EALSAEQAWeapon Weapon) const;
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    int32 GetPowerRequiredStage(EALSAEQAPower Power) const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    int32 GetWeaponRequiredStage(EALSAEQAWeapon Weapon) const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
     int32 GetCurrentStage() const { return CurrentStage; }
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Progression")
