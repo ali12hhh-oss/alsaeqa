@@ -44,6 +44,11 @@ public:
     FALSAEQACompanionFamilySearchUnlocked OnFamilySearchUnlocked;
 
 protected:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category="ALSAEQA|Companion Story")
+    virtual void BeginPlay() override;
+
+private:
+    void SynchronizeFromSaveManager(bool bBroadcastUnlock);
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame, Category="ALSAEQA|Companion Story", meta=(AllowPrivateAccess="true"))
     FALSAEQACompanionStoryProgress Progress;
 };
