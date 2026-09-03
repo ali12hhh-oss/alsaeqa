@@ -104,22 +104,69 @@ bool AALSAEQAMountActor::MountRider(AActor* NewRider)
     return true;
 }
 
-bool AALSAEQACharacter::DismountRider()
+bool AALSAEQAMountActor::DismountRider()
 {
-    return false;
+    if (!Rider.IsValid())
+    {
+        bRiderSprinting = false;
+        SetActorTickEnabled(false);
+        return false;
+    }
+
+    AActor* CurrentRider = Rider.Get();
+    if (MountComponent && MountComponent->IsMounted())
+    {
+        MountComponent->Dismount();
+    }
+
+    Rider.Reset();
+    bRiderSprinting = false;
+    SetActorTickEnabled(false);
+    if (GetCharacterMovement() && MountComponent)
+    {
+        const FALSAEQAMountProfile Profile = MountComponent->GetMountProfile();
+        GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed * FMath::Max(Profile.MovementSpeedMultiplier, 0.1f);
+    }
+    CurrentRider->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+    return true;
 }
 
-bool AALSAEQACharacter::InjureMount()
+bool AALSAEQAMountActor::InjureMount()
 {
-    return false;
+    if (!MountComponent)
+    {
+        return false;
+    }
+
+    const bool bWasMounted = MountComponent->IsMounted();
+    const bool bInjured = MountComponent->InjureMount();
+    if (bWasMounted && Rider.IsValid())
+    {
+        DismountRider();
+    }
+    return bInjured;
 }
 
-bool AALSAEQACharacter::ReleaseMount()
+bool AALSAEQAMountActor::ReleaseMount()
 {
-    return false;
+    if (!MountComponent)
+    {
+        return false;
+    }
+
+    const bool bReleased = MountComponent->ReleaseMount();
+    if (Rider.IsValid())
+    {
+        AActor* CurrentRider = Rider.Get();
+        Rider.Reset();
+        bRiderSprinting = false;
+        SetActorTickEnabled(false);
+        CurrentRider->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+    }
+    return bReleased;
 }
 
-bool AALSAEQACharacter::MoveRiderForward(float Value)
+bool AALSAEQAMountActor::MoveRiderForward(float Value)
 {
     if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted() || FMath::IsNearlyZero(Value))
     {
@@ -130,7 +177,7 @@ bool AALSAEQACharacter::MoveRiderForward(float Value)
     return true;
 }
 
-bool AALSAEQACharacter::MoveRiderRight(float Value)
+bool AALSAEQAMountActor::MoveRiderRight(float Value)
 {
     if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted() || FMath::IsNearlyZero(Value))
     {
@@ -141,7 +188,7 @@ bool AALSAEQACharacter::MoveRiderRight(float Value)
     return true;
 }
 
-bool AALSAEQACharacter::SetRiderSprint(bool bEnabled)
+bool AALSAEQAMountActor::SetRiderSprint(bool bEnabled)
 {
     if (!Rider.IsValid() || !MountComponent || !MountComponent->IsMounted())
     {
