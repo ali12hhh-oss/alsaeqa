@@ -110,7 +110,7 @@ bool UALSAEQASaveManager::SetCompanionState(EALSAEQACompanionStoryState NewState
         return false;
     }
 
-    // The family-search state cannot become active before stage 25.
+    // Captured/rescued/trusted states are valid at any stage; only the family-revelation state is gated.
     if (NewState == EALSAEQACompanionStoryState::FamilyRevelation && !CanBeginFamilySearch())
     {
         return false;
