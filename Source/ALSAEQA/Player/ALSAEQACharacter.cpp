@@ -32,6 +32,7 @@ AALSAEQACharacter::AALSAEQACharacter()
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
     AbilityComponent = CreateDefaultSubobject<UALSAEQAAbilityComponent>(TEXT("AbilityComponent"));
+    MeleeCombatComponent = CreateDefaultSubobject<UALSAEQAMeleeCombatComponent>(TEXT("MeleeCombatComponent"));
     HealthComponent = CreateDefaultSubobject<UALSAEQAHealthComponent>(TEXT("HealthComponent"));
     ThunderChargeComponent = CreateDefaultSubobject<UALSAEQAThunderChargeComponent>(TEXT("ThunderChargeComponent"));
     LegacyComponent = CreateDefaultSubobject<UALSAEQALegacyComponent>(TEXT("LegacyComponent"));
@@ -148,8 +149,36 @@ void AALSAEQACharacter::ActivateMountStormSummon() { ActivateMountAbility(EALSAE
 void AALSAEQACharacter::ActivateMountThunderSense() { ActivateMountAbility(EALSAEQAMountAbility::ThunderSense); }
 void AALSAEQACharacter::ActivateMountStormMode() { ActivateMountAbility(EALSAEQAMountAbility::StormMode); }
 
-void AALSAEQACharacter::PerformLightAttack() {}
-void AALSAEQACharacter::PerformHeavyAttack() {}
+bool AALSAEQACharacter::PerformMeleeStrike(bool bHeavy)
+{
+    if (!MeleeCombatComponent) return false;
+    const bool bStarted = bHeavy ? MeleeCombatComponent->HeavyAttack() : MeleeCombatComponent->LightAttack();
+    if (!bStarted) return false;
+
+    UWorld* World = GetWorld();
+    if (!World) return true;
+    const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 45.0f);
+    const FVector End = Start + GetActorForwardVector() * MeleeAttackRange;
+    const FCollisionShape Shape = FCollisionShape::MakeSphere(MeleeAttackRadius);
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(ALSAEQAMeleeStrike), false, this);
+    Params.AddIgnoredActor(this);
+    FCollisionObjectQueryParams ObjectTypes;
+    ObjectTypes.AddObjectTypesToQuery(ECC_Pawn);
+    TArray<FHitResult> Hits;
+    World->SweepMultiByObjectType(Hits, Start, End, FQuat::Identity, ObjectTypes, Shape, Params);
+    TSet<AActor*> Damaged;
+    const float Damage = bHeavy ? MeleeCombatComponent->HeavyDamage : MeleeCombatComponent->LightDamage;
+    for (const FHitResult& Hit : Hits)
+    {
+        AActor* Target = Hit.GetActor();
+        if (!IsValid(Target) || Damaged.Contains(Target)) continue;
+        if (MeleeCombatComponent->TryHitActor(Target, Damage, EALSAEQADamageType::Physical)) Damaged.Add(Target);
+    }
+    return true;
+}
+
+void AALSAEQACharacter::PerformLightAttack() { PerformMeleeStrike(false); }
+void AALSAEQACharacter::PerformHeavyAttack() { PerformMeleeStrike(true); }
 
 void AALSAEQACharacter::BeginThunderCharge()
 {
