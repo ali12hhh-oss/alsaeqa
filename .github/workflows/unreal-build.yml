@@ -1,0 +1,66 @@
+name: ALSAEQA Unreal Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Source/**'
+      - 'Config/**'
+      - '*.uproject'
+      - '.github/workflows/unreal-build.yml'
+
+jobs:
+  unreal-build:
+    name: Unreal Engine 5.8 Build
+    # A real Unreal Engine installation is required. Configure a self-hosted
+    # runner with labels: self-hosted, windows, unreal-5.8.
+    runs-on: [self-hosted, windows, unreal-5.8]
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Unreal project
+        shell: powershell
+        run: |
+          if (-not (Test-Path "$env:GITHUB_WORKSPACE\ALSAEQA.uproject")) {
+            throw "ALSAEQA.uproject was not found."
+          }
+          $project = Get-Content "$env:GITHUB_WORKSPACE\ALSAEQA.uproject" -Raw | ConvertFrom-Json
+          if ($project.EngineAssociation -ne '5.8') {
+            throw "Expected Unreal Engine 5.8, found $($project.EngineAssociation)."
+          }
+
+      - name: Locate UnrealBuildTool
+        shell: powershell
+        run: |
+          $candidates = @(
+            "$env:UE_ROOT\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.exe",
+            "$env:UE_ROOT\Engine\Binaries\DotNET\UnrealBuildTool.exe"
+          )
+          $ubt = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $ubt) {
+            throw "UnrealBuildTool was not found. Set UE_ROOT to the Unreal Engine 5.8 installation on the runner."
+          }
+          "UBT=$ubt" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build Windows Development
+        shell: powershell
+        run: |
+          & "$env:UBT" ALSAEQA Win64 Development `
+            -Project="$env:GITHUB_WORKSPACE\ALSAEQA.uproject" `
+            -NoHotReloadFromIDE `
+            -WaitMutex
+          if ($LASTEXITCODE -ne 0) {
+            throw "UnrealBuildTool failed with exit code $LASTEXITCODE."
+          }
+
+      - name: Upload build receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alsaeqa-build-receipts
+          path: Build/Receipts/**
+          if-no-files-found: ignore
