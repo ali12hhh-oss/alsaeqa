@@ -1,6 +1,7 @@
 #include "Companions/ALSAEQARidingComponent.h"
 
 #include "Companions/ALSAEQAMountActor.h"
+#include "Companions/ALSAEQAMountComponent.h"
 
 UALSAEQARidingComponent::UALSAEQARidingComponent()
 {
@@ -20,6 +21,7 @@ bool UALSAEQARidingComponent::TryMount(AALSAEQAMountActor* Mount)
     }
 
     CurrentMount = Mount;
+    CurrentMountId = Mount->GetMountComponent() ? Mount->GetMountComponent()->GetMountProfile().MountId : NAME_None;
     OnRidingStateChanged.Broadcast(true);
     return true;
 }
@@ -30,6 +32,7 @@ bool UALSAEQARidingComponent::Dismount()
     if (!Mount)
     {
         CurrentMount.Reset();
+        CurrentMountId = NAME_None;
         return false;
     }
 
@@ -39,6 +42,22 @@ bool UALSAEQARidingComponent::Dismount()
     }
 
     CurrentMount.Reset();
+    CurrentMountId = NAME_None;
     OnRidingStateChanged.Broadcast(false);
     return true;
+}
+
+bool UALSAEQARidingComponent::MoveForward(float Value)
+{
+    return CurrentMount.IsValid() && CurrentMount->MoveRiderForward(Value);
+}
+
+bool UALSAEQARidingComponent::MoveRight(float Value)
+{
+    return CurrentMount.IsValid() && CurrentMount->MoveRiderRight(Value);
+}
+
+bool UALSAEQARidingComponent::SetSprint(bool bEnabled)
+{
+    return CurrentMount.IsValid() && CurrentMount->SetRiderSprint(bEnabled);
 }
