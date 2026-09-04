@@ -18,6 +18,8 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Save") void SetStage(int32 NewStage);
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Save") bool SaveCheckpoint(FName CheckpointId, FName RegionId, int32 Stage, FVector PlayerLocation, FRotator PlayerRotation);
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Save") bool RespawnAtLastCheckpoint();
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Save") bool HasSavedJourney() const;
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Save") bool BeginNewJourney();
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Save") int32 GetStage() const;
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Save") FALSAEQACheckpointData GetLastCheckpoint() const;
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Save") int32 GetRespawnCount() const;
