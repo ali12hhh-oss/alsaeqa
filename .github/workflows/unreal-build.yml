@@ -7,16 +7,18 @@ on:
     paths:
       - 'Source/**'
       - 'Config/**'
+      - 'Tools/Assets/**'
       - '*.uproject'
       - '.github/workflows/unreal-build.yml'
+
+env:
+  ALSAEQA_ASSET_RELEASE_TAG: assets-v1
 
 jobs:
   unreal-build:
     name: Unreal Engine 5.8 Build
-    # A real Unreal Engine installation is required. Configure a self-hosted
-    # runner with labels: self-hosted, windows, unreal-5.8.
     runs-on: [self-hosted, windows, unreal-5.8]
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     steps:
       - name: Checkout
@@ -31,6 +33,16 @@ jobs:
           $project = Get-Content "$env:GITHUB_WORKSPACE\ALSAEQA.uproject" -Raw | ConvertFrom-Json
           if ($project.EngineAssociation -ne '5.8') {
             throw "Expected Unreal Engine 5.8, found $($project.EngineAssociation)."
+          }
+
+      - name: Download real assets from GitHub Release
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          & "$env:GITHUB_WORKSPACE\Tools\Assets\Download-RealAssets.ps1" -ReleaseTag "$env:ALSAEQA_ASSET_RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Real asset download failed with exit code $LASTEXITCODE."
           }
 
       - name: Locate UnrealBuildTool
