@@ -3,11 +3,11 @@
 This is the continuous main progression. Regions remain revisitable; stages unlock new interactions rather than permanently closing old areas.
 
 ## 1–10 — Origin of the Heir
-1. Chains in the Mine — escape the opening collapse and awaken the first spark.
+1. Chains in the Mine — after the mine collapse and first awakening, return to the mine as a free man, rescue the workers, defeat the slavers controlling the mine, and begin uncovering the first clues about the hero's past.
 2. The Hidden Mark — follow the ancient symbol and survive the first pursuers.
 3. Echo Under Stone — discover the first memory of the Thunder lineage.
 4. Broken Lift — restore the mine route with controlled thunder.
-5. The Hunter’s Trail — survive the first organized pursuit.
+5. The Captive’s Trail — follow an organized enemy pursuit, free the future permanent companion from the enemies holding her captive, and establish her as a permanent partner in the journey.
 6. Forest of Whispers — enter the forest and discover the wider world.
 7. The Old Shrine — learn that thunder can reveal more than it destroys.
 8. Beast at the Pass — first major creature encounter.
@@ -94,6 +94,8 @@ At stage 40 the companion chooses to remain with the hero. Her family is safe an
 
 ## Persistent rules
 - The world is one connected, revisitable adventure; stage progression changes it instead of deleting old areas.
+- The hero origin and mine awakening follow `HERO_ORIGIN_AND_MAIN_STORY.md` as the canonical story source.
+- The permanent companion is rescued and joins the hero in stage 5; she is a second protagonist, not a temporary follower.
 - The companion’s family search is strictly stages 25–40.
 - After 40, the companion remains with the hero and actively helps with the hero’s family search.
 - Mounts are progression and traversal systems, not cosmetic speed boosts.
