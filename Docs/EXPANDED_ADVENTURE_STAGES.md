@@ -2,6 +2,11 @@
 
 This is the continuous progression plan for the game. There are no V1/V2/V3 splits. New mechanics are discovered naturally through the same adventure.
 
+## Canonical story authority
+The hero's origin, identity, childhood events, mine awakening and Stage 1 story are governed by `HERO_ORIGIN_AND_MAIN_STORY.md`. If another roadmap or cinematic note conflicts with that document, the canonical hero story takes precedence and the conflicting note must be reconciled before implementation.
+
+The permanent companion is first met and rescued in Stage 5. Her active family search remains locked until Stage 25 and continues through Stage 40 according to the companion family documents.
+
 ## New progression after the first nine stages
 
 ### Stage 10 — The Storm Thread
@@ -76,4 +81,4 @@ This is the continuous progression plan for the game. There are no V1/V2/V3 spli
 
 ## Asset-production rule
 
-The project includes a runtime procedural world foundation so the first playable environment can be generated from Unreal's built-in primitive geometry without requiring the user to hand-build a map. Production-grade character meshes, skeletal animation sets, cinematics, and authored Unreal binary assets remain a separate editor/binary asset pipeline and must not be falsely represented as completed when only C++ gameplay contracts exist.
+The final game must use the project's supplied production-grade real character, environment, animation, audio, VFX and authored Unreal assets. **Primitive geometry is not an acceptable final visual substitute.** Runtime procedural or built-in primitive geometry may exist only as an internal development/fallback foundation where unavoidable; it must never be represented as the completed art direction, final cinematic content, or final gameplay presentation when the corresponding real asset exists.
