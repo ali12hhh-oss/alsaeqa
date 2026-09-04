@@ -11,20 +11,13 @@ function Get-Sha256([string]$Path) {
     return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
 }
 
-if (-not (Test-Path -LiteralPath $ManifestPath)) {
-    throw "Assets manifest not found: $ManifestPath"
-}
-
+if (-not (Test-Path -LiteralPath $ManifestPath)) { throw "Assets manifest not found: $ManifestPath" }
 $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
-if ($manifest.project -ne 'ALSAEQA') {
-    throw "Invalid ALSAEQA assets manifest."
-}
+if ($manifest.project -ne 'ALSAEQA') { throw 'Invalid ALSAEQA assets manifest.' }
 
 $repo = if ($env:GITHUB_REPOSITORY) { $env:GITHUB_REPOSITORY } else { 'ali12hhh-oss/alsaeqa' }
 $token = $env:GITHUB_TOKEN
-if (-not $token) {
-    throw 'GITHUB_TOKEN is required to download private or authenticated GitHub Release assets.'
-}
+if (-not $token) { throw 'GITHUB_TOKEN is required to download the authenticated GitHub Release asset.' }
 
 $headers = @{
     Authorization = "Bearer $token"
@@ -38,7 +31,7 @@ Write-Host "Resolving ALSAEQA asset release '$ReleaseTag'..."
 try {
     $release = Invoke-RestMethod -Uri $releaseUrl -Headers $headers -Method Get
 } catch {
-    throw "Asset release '$ReleaseTag' was not found or is not accessible. Create a GitHub Release with this tag and upload the real asset ZIP files before building. Details: $($_.Exception.Message)"
+    throw "Asset release '$ReleaseTag' was not found or is not accessible. Publish the release and upload ALSAEQA_REAL_ASSETS.zip first. Details: $($_.Exception.Message)"
 }
 
 $downloadRoot = Join-Path $env:RUNNER_TEMP "alsaeqa-assets-$ReleaseTag"
@@ -49,40 +42,45 @@ $assetsByName = @{}
 foreach ($asset in $release.assets) { $assetsByName[$asset.name] = $asset }
 
 foreach ($item in $manifest.assets) {
-    if (-not $assetsByName.ContainsKey($item.file)) {
-        throw "Required asset '$($item.file)' is missing from release '$ReleaseTag'."
-    }
+    if (-not $assetsByName.ContainsKey($item.file)) { throw "Required asset '$($item.file)' is missing from release '$ReleaseTag'." }
 
     $asset = $assetsByName[$item.file]
     $archivePath = Join-Path $downloadRoot $asset.name
     Write-Host "Downloading $($asset.name) ($($asset.size) bytes)..."
-
     Invoke-WebRequest -Uri $asset.url -Headers ($headers + @{ Accept = 'application/octet-stream' }) -OutFile $archivePath
 
     if ($item.sha256 -and $item.sha256 -ne 'REPLACE_AFTER_UPLOAD') {
         $actual = Get-Sha256 $archivePath
-        if ($actual -ne $item.sha256.ToLowerInvariant()) {
-            throw "SHA-256 mismatch for '$($asset.name)'. Expected $($item.sha256), got $actual."
-        }
+        if ($actual -ne $item.sha256.ToLowerInvariant()) { throw "SHA-256 mismatch for '$($asset.name)'. Expected $($item.sha256), got $actual." }
     } else {
-        Write-Warning "SHA-256 is not pinned yet for '$($asset.name)'. Pin it in assets-manifest.json after the final Release upload."
+        Write-Warning "SHA-256 is not pinned yet for '$($asset.name)'. Pin it after the final Release upload."
     }
 
     $destination = Join-Path $ProjectRoot $item.destination
-    if (-not (Test-Path -LiteralPath $destination)) {
-        New-Item -ItemType Directory -Path $destination -Force | Out-Null
+    if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Recurse -Force }
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+
+    $extractRoot = Join-Path $downloadRoot 'extracted'
+    if (Test-Path $extractRoot) { Remove-Item -LiteralPath $extractRoot -Recurse -Force }
+    New-Item -ItemType Directory -Path $extractRoot | Out-Null
+    Write-Host "Extracting $($asset.name)..."
+    Expand-Archive -LiteralPath $archivePath -DestinationPath $extractRoot -Force
+
+    # The archive may contain a single top-level ALSAEQA_REAL_ASSETS folder.
+    # Flatten that wrapper while preserving every authored subdirectory below it.
+    $entries = @(Get-ChildItem -LiteralPath $extractRoot -Force)
+    if ($entries.Count -eq 1 -and $entries[0].PSIsContainer -and $entries[0].Name -eq 'ALSAEQA_REAL_ASSETS') {
+        $sourceRoot = $entries[0].FullName
+    } else {
+        $sourceRoot = $extractRoot
     }
 
-    Write-Host "Extracting $($asset.name) -> $destination"
-    Expand-Archive -LiteralPath $archivePath -DestinationPath $destination -Force
+    Copy-Item -LiteralPath (Join-Path $sourceRoot '*') -Destination $destination -Recurse -Force
 }
 
-Write-Host 'Checking required Unreal asset extensions...'
-$uassetCount = @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot 'Content') -Recurse -File -Filter '*.uasset' -ErrorAction SilentlyContinue).Count
-$umapCount = @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot 'Content') -Recurse -File -Filter '*.umap' -ErrorAction SilentlyContinue).Count
+$contentRoot = Join-Path $ProjectRoot 'Content'
+$uassetCount = @(Get-ChildItem -LiteralPath $contentRoot -Recurse -File -Filter '*.uasset' -ErrorAction SilentlyContinue).Count
+$umapCount = @(Get-ChildItem -LiteralPath $contentRoot -Recurse -File -Filter '*.umap' -ErrorAction SilentlyContinue).Count
 Write-Host "Real Unreal assets available: $uassetCount .uasset, $umapCount .umap"
-if (($uassetCount + $umapCount) -eq 0) {
-    throw 'No .uasset or .umap files were found after extraction. Refusing to continue with an asset-less build.'
-}
-
+if (($uassetCount + $umapCount) -eq 0) { throw 'No .uasset or .umap files were found after extraction. Refusing to continue with an asset-less build.' }
 Write-Host "ALSAEQA real assets are ready for Unreal build from release '$ReleaseTag'."
