@@ -21,8 +21,20 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Cinematics")
     void StopActionMoment();
 
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Cinematics")
+    bool StartOpeningCinematic();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Cinematics")
+    void FinishOpeningCinematic();
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Cinematics")
+    void ResetOpeningCinematic();
+
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Cinematics")
     bool IsActionMomentActive() const { return bActionMomentActive; }
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Cinematics")
+    bool HasOpeningCinematicPlayed() const { return bOpeningCinematicPlayed; }
 
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Cinematics")
     FALSAEQACinematicEvent OnCinematicEvent;
@@ -30,10 +42,14 @@ public:
 protected:
     virtual void BeginPlay() override;
 
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Cinematics")
+    void HandleOpeningCinematic();
+
 private:
     FTimerHandle RestoreTimeHandle;
     float PreviousTimeDilation = 1.0f;
     bool bActionMomentActive = false;
+    bool bOpeningCinematicPlayed = false;
 
     void RestoreNormalTime();
 };
