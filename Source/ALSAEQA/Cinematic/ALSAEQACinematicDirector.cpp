@@ -38,6 +38,29 @@ bool UALSAEQACinematicDirector::PlayActionMoment(const FALSAEQACinematicRequest&
     return true;
 }
 
+bool UALSAEQACinematicDirector::StartOpeningCinematic()
+{
+    if (bOpeningCinematicPlayed || bActionMomentActive)
+    {
+        return false;
+    }
+
+    bOpeningCinematicPlayed = true;
+    OnCinematicEvent.Broadcast(EALSAEQACinematicEvent::Opening);
+    HandleOpeningCinematic();
+    return true;
+}
+
+void UALSAEQACinematicDirector::FinishOpeningCinematic()
+{
+    OnCinematicEvent.Broadcast(EALSAEQACinematicEvent::Opening);
+}
+
+void UALSAEQACinematicDirector::ResetOpeningCinematic()
+{
+    bOpeningCinematicPlayed = false;
+}
+
 void UALSAEQACinematicDirector::StopActionMoment()
 {
     if (UWorld* World = GetWorld())
