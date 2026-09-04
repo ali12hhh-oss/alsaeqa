@@ -1,6 +1,5 @@
 #include "MainMenu/ALSAEQAMainMenuSubsystem.h"
 
-#include "Kismet/GameplayStatics.h"
 #include "Save/ALSAEQASaveManager.h"
 
 void UALSAEQAMainMenuSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -24,7 +23,7 @@ void UALSAEQAMainMenuSubsystem::RefreshState()
     const FALSAEQACheckpointData Checkpoint = Save->GetLastCheckpoint();
     State.CurrentRegion = Checkpoint.RegionId;
     State.CurrentCheckpoint = Checkpoint.CheckpointId;
-    State.bCompanionRescued = Save->GetCompanionStory().bRescued;
+    State.bCompanionRescued = static_cast<uint8>(Save->GetCompanionStory().State) >= static_cast<uint8>(EALSAEQACompanionStoryState::Rescued);
     State.CompanionFamilySearchStage = Save->GetFamilySearchStage();
     State.bThunderBeastOwned = Save->HasTamedMount(FName(TEXT("ThunderBeast")));
 
