@@ -52,6 +52,11 @@ bool UALSAEQAMainMenuSubsystem::BeginNewJourney(bool bConfirmExistingSave)
     return true;
 }
 
+bool UALSAEQAMainMenuSubsystem::ConfirmNewJourney()
+{
+    return BeginNewJourney(true);
+}
+
 void UALSAEQAMainMenuSubsystem::NotifyAction(EALSAEQAMainMenuAction Action)
 {
     OnActionRequested.Broadcast(Action);
