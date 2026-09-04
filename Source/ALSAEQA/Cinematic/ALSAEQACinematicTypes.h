@@ -6,6 +6,7 @@
 UENUM(BlueprintType)
 enum class EALSAEQACinematicEvent : uint8
 {
+    Opening UMETA(DisplayName="Opening Cinematic"),
     CombatFinisher UMETA(DisplayName="Combat Finisher"),
     PerfectDodge UMETA(DisplayName="Perfect Dodge"),
     ParryCounter UMETA(DisplayName="Parry Counter"),
