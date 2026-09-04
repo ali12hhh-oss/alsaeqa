@@ -1,0 +1,42 @@
+{
+  "project": "ALSAEQA",
+  "release_tag": "assets-v1",
+  "description": "Release packages containing the real authored Unreal assets. These files are downloaded into the workspace immediately before the Unreal build and are not committed to Git history.",
+  "assets": [
+    {
+      "file": "ALSAEQA-Characters.zip",
+      "destination": "Content/Art/Characters",
+      "sha256": "REPLACE_AFTER_UPLOAD"
+    },
+    {
+      "file": "ALSAEQA-Creatures.zip",
+      "destination": "Content/Art/Creatures",
+      "sha256": "REPLACE_AFTER_UPLOAD"
+    },
+    {
+      "file": "ALSAEQA-Weapons.zip",
+      "destination": "Content/Art/Weapons",
+      "sha256": "REPLACE_AFTER_UPLOAD"
+    },
+    {
+      "file": "ALSAEQA-Environment.zip",
+      "destination": "Content/Art/Environment",
+      "sha256": "REPLACE_AFTER_UPLOAD"
+    },
+    {
+      "file": "ALSAEQA-Animations.zip",
+      "destination": "Content/Art/Animations",
+      "sha256": "REPLACE_AFTER_UPLOAD"
+    },
+    {
+      "file": "ALSAEQA-VFX.zip",
+      "destination": "Content/Art/VFX",
+      "sha256": "REPLACE_AFTER_UPLOAD"
+    },
+    {
+      "file": "ALSAEQA-Materials.zip",
+      "destination": "Content/Art/Materials",
+      "sha256": "REPLACE_AFTER_UPLOAD"
+    }
+  ]
+}
