@@ -18,6 +18,20 @@ bool UALSAEQASaveManager::EnsureSaveData()
 
 bool UALSAEQASaveManager::SaveProgress() { return EnsureSaveData() && UGameplayStatics::SaveGameToSlot(SaveData, SaveSlotName, 0); }
 bool UALSAEQASaveManager::LoadProgress() { SaveData = nullptr; return EnsureSaveData(); }
+bool UALSAEQASaveManager::HasSavedJourney() const { return UGameplayStatics::DoesSaveGameExist(SaveSlotName, 0); }
+
+bool UALSAEQASaveManager::BeginNewJourney()
+{
+    if (!UGameplayStatics::DeleteGameInSlot(SaveSlotName, 0))
+    {
+        // DeleteGameInSlot returns false when no slot exists; that is a valid fresh-start case.
+        if (HasSavedJourney()) return false;
+    }
+
+    SaveData = Cast<UALSAEQASaveGame>(UGameplayStatics::CreateSaveGameObject(UALSAEQASaveGame::StaticClass()));
+    if (!SaveData) return false;
+    return SaveProgress();
+}
 
 void UALSAEQASaveManager::SetStage(int32 NewStage)
 {
