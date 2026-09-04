@@ -29,6 +29,9 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Main Menu")
     bool BeginNewJourney(bool bConfirmExistingSave);
 
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Main Menu")
+    bool ConfirmNewJourney();
+
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Main Menu")
     bool RequiresNewJourneyConfirmation() const { return State.bHasSave; }
 
