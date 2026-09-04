@@ -14,7 +14,8 @@ public class ALSAEQA : ModuleRules
             "InputCore",
             "AIModule",
             "ProceduralMeshComponent",
-            "Niagara"
+            "Niagara",
+            "UMG"
         });
 
         PrivateDependencyModuleNames.AddRange(new[]
