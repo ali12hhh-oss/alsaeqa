@@ -97,8 +97,12 @@ void UALSAEQAMainMenuWidget::OnNewJourneyClicked()
     if (!GetGameInstance()) return;
     if (UALSAEQAMainMenuSubsystem* Menu = GetGameInstance()->GetSubsystem<UALSAEQAMainMenuSubsystem>())
     {
-        // A save must never be silently overwritten. Blueprint presentation should show the confirmation dialog.
-        if (Menu->RequiresNewJourneyConfirmation()) return;
+        // Never overwrite an existing journey without explicit confirmation.
+        if (Menu->RequiresNewJourneyConfirmation())
+        {
+            // Blueprint presentation owns the confirmation dialog and may call ConfirmNewJourney().
+            return;
+        }
         Menu->BeginNewJourney(false);
     }
 }
