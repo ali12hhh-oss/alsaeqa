@@ -60,11 +60,32 @@ foreach ($item in $manifest.assets) {
     if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Recurse -Force }
     New-Item -ItemType Directory -Path $destination -Force | Out-Null
 
-    $extractRoot = Join-Path $downloadRoot 'extracted'
+    $extractRoot = Join-Path $downloadRoot 'source'
     if (Test-Path $extractRoot) { Remove-Item -LiteralPath $extractRoot -Recurse -Force }
     New-Item -ItemType Directory -Path $extractRoot | Out-Null
     Write-Host "Extracting $($asset.name)..."
     Expand-Archive -LiteralPath $archivePath -DestinationPath $extractRoot -Force
+
+    # The release contains source packs that may themselves be ZIP files.
+    # Expand those nested packs recursively so the Unreal import stage can see
+    # all authored FBX/OBJ/GLTF files without committing the binaries to Git.
+    $expanded = $true
+    $expandedArchives = @{}
+    while ($expanded) {
+        $expanded = $false
+        $nested = @(Get-ChildItem -LiteralPath $extractRoot -Recurse -File -Filter '*.zip' -ErrorAction SilentlyContinue)
+        foreach ($nestedZip in $nested) {
+            $key = $nestedZip.FullName.ToLowerInvariant()
+            if ($expandedArchives.ContainsKey($key)) { continue }
+            $expandedArchives[$key] = $true
+            $nestedTarget = Join-Path $nestedZip.DirectoryName ([IO.Path]::GetFileNameWithoutExtension($nestedZip.Name))
+            if (Test-Path -LiteralPath $nestedTarget) { Remove-Item -LiteralPath $nestedTarget -Recurse -Force }
+            New-Item -ItemType Directory -Path $nestedTarget -Force | Out-Null
+            Write-Host "Expanding nested source pack: $($nestedZip.Name)"
+            Expand-Archive -LiteralPath $nestedZip.FullName -DestinationPath $nestedTarget -Force
+            $expanded = $true
+        }
+    }
 
     # The archive may contain a single top-level ALSAEQA_REAL_ASSETS folder.
     # Flatten that wrapper while preserving every authored subdirectory below it.
