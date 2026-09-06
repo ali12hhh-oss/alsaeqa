@@ -10,6 +10,7 @@
 #include "Save/ALSAEQASaveManager.h"
 #include "Visual/ALSAEQAVisualAssetComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Cinematic/ALSAEQACinematicDirector.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -41,6 +42,7 @@ AALSAEQACharacter::AALSAEQACharacter()
     LegacyComponent = CreateDefaultSubobject<UALSAEQALegacyComponent>(TEXT("LegacyComponent"));
     RidingComponent = CreateDefaultSubobject<UALSAEQARidingComponent>(TEXT("RidingComponent"));
     VisualAssetComponent = CreateDefaultSubobject<UALSAEQAVisualAssetComponent>(TEXT("VisualAssetComponent"));
+    CinematicDirector = CreateDefaultSubobject<UALSAEQACinematicDirector>(TEXT("CinematicDirector"));
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     GetCharacterMovement()->BrakingDecelerationWalking = 1800.0f;
     GetCharacterMovement()->AirControl = 0.35f;
@@ -169,6 +171,15 @@ bool AALSAEQACharacter::PerformMeleeStrike(bool bHeavy)
     const bool bStarted = bHeavy ? MeleeCombatComponent->HeavyAttack() : MeleeCombatComponent->LightAttack();
     if (!bStarted) return false;
 
+    if (CinematicDirector && bHeavy)
+    {
+        FALSAEQACinematicRequest Moment;
+        Moment.Event = EALSAEQACinematicEvent::CombatFinisher;
+        Moment.SlowMotionScale = 0.35f;
+        Moment.Duration = 0.75f;
+        CinematicDirector->PlayActionMoment(Moment);
+    }
+
     UWorld* World = GetWorld();
     if (!World) return true;
     const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 45.0f);
@@ -257,6 +268,15 @@ void AALSAEQACharacter::ReleaseThunderCharge()
     const float ReleasedPercent = ThunderChargeComponent->ReleaseCharge();
     if (ReleasedPercent <= 0.0f) return;
     ApplyThunderReleaseToTargets(ThunderReleaseDamage * Multiplier);
+
+    if (CinematicDirector && ReleasedPercent >= 0.85f)
+    {
+        FALSAEQACinematicRequest Moment;
+        Moment.Event = EALSAEQACinematicEvent::AbilityImpact;
+        Moment.SlowMotionScale = 0.22f;
+        Moment.Duration = 1.15f;
+        CinematicDirector->PlayActionMoment(Moment);
+    }
 }
 
 void AALSAEQACharacter::CancelThunderCharge()
