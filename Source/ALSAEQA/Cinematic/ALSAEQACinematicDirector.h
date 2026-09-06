@@ -28,6 +28,9 @@ public:
     void FinishOpeningCinematic();
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Cinematics")
+    bool StartStoryBeat(EALSAEQACinematicEvent Event);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Cinematics")
     void ResetOpeningCinematic();
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Cinematics")
