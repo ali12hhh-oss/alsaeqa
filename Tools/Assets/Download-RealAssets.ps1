@@ -89,7 +89,11 @@ foreach ($item in $manifest.assets) {
 
     # Keep raw source packs outside Content. Unreal must import FBX/OBJ/etc.
     # into .uasset assets before they can be cooked.
-    if (-not $sourceRoot) { $sourceRoot = $extractRoot }
+    $sourceRoot = $extractRoot
+    $entries = @(Get-ChildItem -LiteralPath $extractRoot -Force)
+    if ($entries.Count -eq 1 -and $entries[0].PSIsContainer -and $entries[0].Name -eq 'ALSAEQA_REAL_ASSETS') {
+        $sourceRoot = $entries[0].FullName
+    }
     "ALSAEQA_ASSET_SOURCE_ROOT=$sourceRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
 }
 
