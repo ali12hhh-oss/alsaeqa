@@ -152,6 +152,12 @@ Gameplay collision remains independent from presentation so the art can be repla
 
 Do **not** commit an asset merely because a website says it is downloadable. Keep a manifest containing source URL, asset name, license, date checked, and intended use. Do not redistribute paid/proprietary source archives. CC0 assets may be used in the game, but the repository should avoid turning the repository itself into an asset-pack mirror.
 
+## Release-connected source-art pipeline
+
+The canonical source archive is now published in GitHub Release `assets-v1` as `ALSAEQA_REAL_ASSETS.zip`. Its SHA-256 is pinned in `Tools/Assets/assets-manifest.json`. The CI pipeline downloads the archive, verifies the digest, expands nested source-pack ZIPs, and exposes the expanded FBX/OBJ/GLTF source tree to the Unreal Editor import stage. Raw source binaries remain outside Git so the repository does not become an asset-pack mirror.
+
+The Unreal import automation writes authored imported assets under `/Game/Art`. It does not create primitives, greyboxes, placeholders, or procedural final-art substitutes. Any additional asset packs uploaded to the same Release can be added to the manifest later without changing the game's C++ systems.
+
 ## Current limitation
 
-GitHub's connected file API available to this development session accepts UTF-8 text but cannot upload binary GLB/FBX/PNG/ZIP files. Therefore the repository now contains the real-art integration point and acquisition specification rather than falsely claiming binary art packs have already been uploaded. The selected official sources are ready for the Unreal development machine/runner to import.
+The repository can automate acquisition and Unreal import of the released source art, but binary source art is not directly committed to Git. Final visual assignment of a particular mesh/material/animation to a specific Blueprint still requires the Unreal asset registry/import result; the codebase keeps gameplay logic independent from those visual assets so the real art can be wired without replacing it with placeholders.
