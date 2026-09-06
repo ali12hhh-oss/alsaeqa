@@ -8,6 +8,7 @@ on:
       - 'Source/**'
       - 'Config/**'
       - 'Tools/Assets/**'
+      - 'Tools/Unreal/**'
       - '*.uproject'
       - '.github/workflows/unreal-build.yml'
 
@@ -18,7 +19,7 @@ jobs:
   unreal-build:
     name: Unreal Engine 5.8 Build
     runs-on: [self-hosted, windows, unreal-5.8]
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     steps:
       - name: Checkout
@@ -45,18 +46,49 @@ jobs:
             throw "Real asset download failed with exit code $LASTEXITCODE."
           }
 
-      - name: Locate UnrealBuildTool
+      - name: Locate Unreal tools
         shell: powershell
         run: |
-          $candidates = @(
+          $editorCandidates = @(
+            "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe",
+            "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor.exe"
+          )
+          $editor = $editorCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $editor) { throw "Unreal Editor 5.8 was not found. Set UE_ROOT on the self-hosted runner." }
+          "UE_EDITOR=$editor" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+          $ubtCandidates = @(
             "$env:UE_ROOT\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.exe",
             "$env:UE_ROOT\Engine\Binaries\DotNET\UnrealBuildTool.exe"
           )
-          $ubt = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $ubt) {
-            throw "UnrealBuildTool was not found. Set UE_ROOT to the Unreal Engine 5.8 installation on the runner."
-          }
+          $ubt = $ubtCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $ubt) { throw "UnrealBuildTool was not found." }
           "UBT=$ubt" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Import released authored art
+        shell: powershell
+        run: |
+          if (-not $env:ALSAEQA_ASSET_SOURCE_ROOT) { throw "Asset source root was not produced by the downloader." }
+          $args = @(
+            "$env:GITHUB_WORKSPACE\ALSAEQA.uproject",
+            "-Unattended",
+            "-NoSplash",
+            "-NoSound",
+            "-NoP4",
+            "-ExecutePythonScript=$env:GITHUB_WORKSPACE\Tools\Unreal\ImportReleaseArt.py"
+          )
+          & "$env:UE_EDITOR" @args
+          if ($LASTEXITCODE -ne 0) { throw "Unreal authored-art import failed with exit code $LASTEXITCODE." }
+
+      - name: Verify imported authored art
+        shell: powershell
+        run: |
+          $content = "$env:GITHUB_WORKSPACE\Content"
+          $uassets = @(Get-ChildItem -LiteralPath $content -Recurse -File -Filter "*.uasset" -ErrorAction SilentlyContinue)
+          $umaps = @(Get-ChildItem -LiteralPath $content -Recurse -File -Filter "*.umap" -ErrorAction SilentlyContinue)
+          Write-Host "Imported .uasset: $($uassets.Count)"
+          Write-Host "Imported .umap: $($umaps.Count)"
+          if (($uassets.Count + $umaps.Count) -eq 0) { throw "No imported Unreal assets were found after Release import." }
 
       - name: Build Windows Development
         shell: powershell
