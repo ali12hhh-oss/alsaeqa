@@ -1,12 +1,12 @@
 {
   "project": "ALSAEQA",
   "release_tag": "assets-v1",
-  "description": "The canonical release asset package for ALSAEQA. One archive contains all 115 real authored Unreal assets. The build extracts it into Content/Art without introducing primitives or placeholders.",
+  "description": "Canonical real-art source archive. The Release asset contains authored source packs, including nested archives; CI expands nested archives before Unreal import.",
   "assets": [
     {
       "file": "ALSAEQA_REAL_ASSETS.zip",
       "destination": "Content/Art",
-      "sha256": "REPLACE_AFTER_UPLOAD"
+      "sha256": "36d3fd3ec7562bfb00bf48ec25319b10a1d44a7fa469d125c70906acff445006"
     }
   ]
 }
