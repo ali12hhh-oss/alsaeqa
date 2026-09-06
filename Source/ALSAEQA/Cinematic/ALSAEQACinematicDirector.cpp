@@ -32,7 +32,7 @@ bool UALSAEQACinematicDirector::PlayActionMoment(const FALSAEQACinematicRequest&
         RestoreTimeHandle,
         this,
         &UALSAEQACinematicDirector::RestoreNormalTime,
-        Request.Duration * FMath::Max(Request.SlowMotionScale, 0.05f),
+        Request.Duration,
         false);
 
     return true;
