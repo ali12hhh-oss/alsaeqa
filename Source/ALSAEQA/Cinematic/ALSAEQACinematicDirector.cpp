@@ -56,6 +56,18 @@ void UALSAEQACinematicDirector::FinishOpeningCinematic()
     OnCinematicEvent.Broadcast(EALSAEQACinematicEvent::Opening);
 }
 
+bool UALSAEQACinematicDirector::StartStoryBeat(EALSAEQACinematicEvent Event)
+{
+    if (bActionMomentActive || Event == EALSAEQACinematicEvent::CombatFinisher ||
+        Event == EALSAEQACinematicEvent::AbilityImpact)
+    {
+        return false;
+    }
+
+    OnCinematicEvent.Broadcast(Event);
+    return true;
+}
+
 void UALSAEQACinematicDirector::ResetOpeningCinematic()
 {
     bOpeningCinematicPlayed = false;
