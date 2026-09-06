@@ -6,21 +6,21 @@ The project already contained the opening story seed in Stage 1 and a general ci
 ## Goal
 The first minutes must immediately establish that ALSAEQA is a cinematic third-person adventure, not a prototype. The opening should feel mysterious, emotional and dangerous, then hand control to the player without an abrupt transition.
 
-Target runtime: **3–4 minutes**, with a shorter mobile-safe fallback edit using the same narrative beats. The compressed backstory/escape beat can be approximately **30 seconds** when the final game flow requires it.
+Target runtime: **30–45 seconds** for the mandatory first-launch prologue, with an optional extended 3–4 minute presentation assembled from the same authored shots. The 30–45 second cut is the canonical mobile-safe opening and must still preserve the complete emotional chain: family memory → attack → hiding → capture/escape → slavery → mine collapse → relic → first awakening → escape → Stage 1 hand-off.
 
 ## Canonical story constraint
 Thunder Giants is the name of the hero's ruling family/bloodline, **not a literal race of giant-sized humans**. Any large silhouette, statue, armor, ruin or perspective shot must not imply that the family members were physically giant-sized. The cinematic must preserve the distinction between the original force that destroyed the Thunder Kingdom and the different criminals/slavers who later enslaved the child.
 
 ## Narrative structure
 
-### Sequence 01 — The Storm Before Memory (0:00–0:30)
+### Sequence 01 — The Storm Before Memory (0:00–0:06)
 - Begin in near darkness with distant wind, low thunder and stone vibration.
 - Reveal a vast ancient landscape through clouds, rain and intermittent lightning.
 - Show monumental Thunder-era ruins, family architecture, heraldry and human-scale ancestral figures through carefully controlled perspective.
 - Do not explain the entire mythology. The audience should understand that an ancient ruling bloodline once protected the realm.
 - Lightning briefly reveals enormous ruins and a monumental path disappearing into the storm.
 
-### Sequence 02 — The Fall of the Thunder Legacy (0:30–1:20)
+### Sequence 02 — The Fall of the Thunder Legacy (0:06–0:13)
 - Move through the ancient ruins as the storm intensifies.
 - Show the Thunder ruling family being overwhelmed by the enemy force through silhouettes, distant movement, firelight, collapsing architecture and reactions rather than graphic violence.
 - A family symbol is protected during the chaos.
@@ -28,7 +28,7 @@ Thunder Giants is the name of the hero's ruling family/bloodline, **not a litera
 - The sequence establishes the father's and brother's deaths and the capture of the mother and surviving siblings without graphic depiction.
 - The mother hides the child behind a chest/large storage box; the child witnesses the destruction and later escapes the immediate attackers.
 
-### Sequence 03 — The Second Captors and the Heir (1:20–2:00)
+### Sequence 03 — The Second Captors and the Heir (0:13–0:20)
 - Transition from the childhood escape to the later period of enslavement.
 - Make it clear through visual language that the people who enslave the child are a **different group** from the attackers who destroyed the Thunder Kingdom.
 - Reveal the hero years later in confinement inside the mine.
@@ -36,14 +36,14 @@ Thunder Giants is the name of the hero's ruling family/bloodline, **not a litera
 - The hero does not understand his Thunder lineage and does not remember his true name.
 - A faint ancient mark or symbol becomes visible in the mine environment.
 
-### Sequence 04 — The Collapse (2:00–2:50)
+### Sequence 04 — The Collapse (0:20–0:27)
 - A structural failure begins far away.
 - Dust, rocks, chains, wood and debris react physically.
 - The camera alternates between controlled cinematic angles and close survival shots.
 - The hero is caught in the collapse and falls into a deep underground chamber.
 - Include a signature survival beat as he struggles against the fall and reaches safety.
 
-### Sequence 05 — The First Awakening (2:50–3:25)
+### Sequence 05 — The First Awakening (0:27–0:37)
 - In the deep chamber, the hero discovers an ancient object, mechanism, relic, symbol or puzzle-like source connected to the Thunder lineage.
 - His distinctive body mark reacts when he approaches/touches it.
 - The dormant inherited power awakens for the first time.
@@ -51,7 +51,7 @@ Thunder Giants is the name of the hero's ruling family/bloodline, **not a litera
 - The hero escapes the mine and reaches a position where he can see the outside world.
 - The effect remains small and mysterious; do not turn him into an all-powerful warrior.
 
-### Sequence 06 — Hand-off to Stage 1 (3:25–4:00)
+### Sequence 06 — Hand-off to Stage 1 (0:37–0:45)
 - The hero has escaped immediate captivity but realizes the workers he left behind are still trapped.
 - A final wide shot establishes the mine, surrounding route and the wider world.
 - The game title **ALSAEQA / الصاعقة** appears with restrained thunder illumination, not a cheap flash.
