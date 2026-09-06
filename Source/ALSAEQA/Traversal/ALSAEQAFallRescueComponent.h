@@ -20,6 +20,9 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Traversal")
     bool TryRescue(const FVector& RescueLocation);
 
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Traversal")
+    void CancelFall();
+
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Traversal")
     bool IsFalling() const { return bFalling; }
 
