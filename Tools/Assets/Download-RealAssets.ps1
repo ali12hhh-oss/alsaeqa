@@ -87,21 +87,15 @@ foreach ($item in $manifest.assets) {
         }
     }
 
-    # The archive may contain a single top-level ALSAEQA_REAL_ASSETS folder.
-    # Flatten that wrapper while preserving every authored subdirectory below it.
-    $entries = @(Get-ChildItem -LiteralPath $extractRoot -Force)
-    if ($entries.Count -eq 1 -and $entries[0].PSIsContainer -and $entries[0].Name -eq 'ALSAEQA_REAL_ASSETS') {
-        $sourceRoot = $entries[0].FullName
-    } else {
-        $sourceRoot = $extractRoot
-    }
-
-    Copy-Item -LiteralPath (Join-Path $sourceRoot '*') -Destination $destination -Recurse -Force
+    # Keep raw source packs outside Content. Unreal must import FBX/OBJ/etc.
+    # into .uasset assets before they can be cooked.
+    if (-not $sourceRoot) { $sourceRoot = $extractRoot }
+    "ALSAEQA_ASSET_SOURCE_ROOT=$sourceRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
 }
+
 
 $contentRoot = Join-Path $ProjectRoot 'Content'
 $uassetCount = @(Get-ChildItem -LiteralPath $contentRoot -Recurse -File -Filter '*.uasset' -ErrorAction SilentlyContinue).Count
 $umapCount = @(Get-ChildItem -LiteralPath $contentRoot -Recurse -File -Filter '*.umap' -ErrorAction SilentlyContinue).Count
-Write-Host "Real Unreal assets available: $uassetCount .uasset, $umapCount .umap"
-if (($uassetCount + $umapCount) -eq 0) { throw 'No .uasset or .umap files were found after extraction. Refusing to continue with an asset-less build.' }
-Write-Host "ALSAEQA real assets are ready for Unreal build from release '$ReleaseTag'."
+Write-Host "Pre-existing Unreal assets: $uassetCount .uasset, $umapCount .umap"
+Write-Host "Real authored source assets are ready for the Unreal import stage from release '$ReleaseTag'."
