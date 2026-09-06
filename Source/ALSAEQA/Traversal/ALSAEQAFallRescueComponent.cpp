@@ -30,3 +30,12 @@ bool UALSAEQAFallRescueComponent::TryRescue(const FVector& RescueLocation)
     OnRescued.Broadcast();
     return true;
 }
+
+void UALSAEQAFallRescueComponent::CancelFall()
+{
+    if (!bFalling)
+    {
+        return;
+    }
+    bFalling = false;
+}
