@@ -1,8 +1,6 @@
 #include "Systems/ALSAEQAHealthComponent.h"
 #include "Systems/ALSAEQAInjuryComponent.h"
 #include "GameFramework/Actor.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 UALSAEQAHealthComponent::UALSAEQAHealthComponent()
 {
@@ -46,7 +44,6 @@ void UALSAEQAHealthComponent::ApplyDamageInfo(const FALSAEQADamageInfo& DamageIn
     if (bDead || DamageInfo.Amount <= 0.0f) return;
 
     ApplyInjuryFromDamage(DamageInfo);
-
     Health = FMath::Clamp(Health - DamageInfo.Amount, 0.0f, MaxHealth);
     OnHealthChanged.Broadcast(Health, MaxHealth);
 
@@ -67,7 +64,7 @@ void UALSAEQAHealthComponent::ApplyInjuryFromDamage(const FALSAEQADamageInfo& Da
 
     const float Severity = FMath::Clamp(DamageInfo.Amount / FMath::Max(MaxHealth, 1.0f) * 2.0f, 0.05f, 1.0f);
     const FVector LocalHit = GetOwner()->GetActorTransform().InverseTransformPosition(DamageInfo.HitLocation);
-    const float Height = FMath::Max(GetOwner()->GetSimpleCollisionHalfHeight(), 1.0f);
+    const float Height = FMath::Max(GetOwner()->GetComponentsBoundingBox(true).Extent.Z, 1.0f);
     const float NormalizedHeight = LocalHit.Z / Height;
     const float Lateral = FMath::Abs(LocalHit.Y);
 
@@ -87,16 +84,9 @@ void UALSAEQAHealthComponent::ApplyInjuryFromDamage(const FALSAEQADamageInfo& Da
 
     InjuryComponent->ApplyBodyPartInjury(Part, Severity);
 
-    // Heavy head/torso impacts can become critical without inventing a separate damage model.
-    if ((Part == EALSAEQAInjuryBodyPart::Head || Part == EALSAEQAInjuryBodyPart::Torso) && DamageInfo.Amount >= 35.0f)
+    if (Part == EALSAEQAInjuryBodyPart::Torso && DamageInfo.Amount >= 35.0f)
     {
-        const EALSAEQAInjuryOrgan Organ = Part == EALSAEQAInjuryBodyPart::Head
-            ? EALSAEQAInjuryOrgan::None
-            : EALSAEQAInjuryOrgan::Lungs;
-        if (Organ != EALSAEQAInjuryOrgan::None)
-        {
-            InjuryComponent->ApplyOrganInjury(Organ, FMath::Clamp(Severity * 0.75f, 0.1f, 0.9f));
-        }
+        InjuryComponent->ApplyOrganInjury(EALSAEQAInjuryOrgan::Lungs, FMath::Clamp(Severity * 0.75f, 0.1f, 0.9f));
     }
 }
 
