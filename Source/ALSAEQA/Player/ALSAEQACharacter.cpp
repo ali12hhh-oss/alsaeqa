@@ -1,5 +1,6 @@
 #include "Player/ALSAEQACharacter.h"
 #include "Systems/ALSAEQAHealthComponent.h"
+#include "Systems/ALSAEQAInjuryComponent.h"
 #include "Storm/ALSAEQAThunderChargeComponent.h"
 #include "Storm/ALSAEQAThunderEnvironmentComponent.h"
 #include "Storm/ALSAEQADynamicStormSubsystem.h"
@@ -59,10 +60,7 @@ AALSAEQACharacter::AALSAEQACharacter()
 void AALSAEQACharacter::BeginPlay()
 {
     Super::BeginPlay();
-    if (HealthComponent)
-    {
-        HealthComponent->OnDeath.AddDynamic(this, &AALSAEQACharacter::HandlePlayerDeath);
-    }
+    if (HealthComponent) HealthComponent->OnDeath.AddDynamic(this, &AALSAEQACharacter::HandlePlayerDeath);
 }
 
 void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -96,36 +94,26 @@ void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
     PlayerInputComponent->BindAction(TEXT("MountStormMode"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormMode);
 }
 
-void AALSAEQACharacter::HandleMountInput()
-{
-    MountOrDismount();
-}
+void AALSAEQACharacter::HandleMountInput() { MountOrDismount(); }
 
 bool AALSAEQACharacter::InteractWithNearest()
 {
     if (bDeathInProgress || !GetWorld()) return false;
-
     AALSAEQAInteractable* BestInteractable = nullptr;
     float BestDistanceSquared = FMath::Square(InteractionRange);
     const FVector HeroLocation = GetActorLocation();
     const FVector Forward = GetActorForwardVector();
-
     for (TActorIterator<AALSAEQAInteractable> It(GetWorld()); It; ++It)
     {
         AALSAEQAInteractable* Candidate = *It;
         if (!IsValid(Candidate)) continue;
-
         const FVector ToCandidate = Candidate->GetActorLocation() - HeroLocation;
         const float DistanceSquared = ToCandidate.SizeSquared();
         if (DistanceSquared > BestDistanceSquared || DistanceSquared <= KINDA_SMALL_NUMBER) continue;
-
-        const FVector Direction = ToCandidate.GetSafeNormal();
-        if (FVector::DotProduct(Forward, Direction) < 0.25f) continue;
-
+        if (FVector::DotProduct(Forward, ToCandidate.GetSafeNormal()) < 0.25f) continue;
         BestDistanceSquared = DistanceSquared;
         BestInteractable = Candidate;
     }
-
     if (!BestInteractable) return false;
     BestInteractable->Interact(this);
     return true;
@@ -154,7 +142,7 @@ void AALSAEQACharacter::MoveRight(float Value)
 }
 
 void AALSAEQACharacter::LookUp(float Value) { if (!bDeathInProgress) AddControllerPitchInput(Value); }
-void AALSAEQACharacter::Turn(float Value) { if (!bDeathInProgress) AddControllerYawInput(Value); }
+void AALSAEQACharacter::Turn(float Value) { if (!bDeathInProgress) AddControllerYawInput(Value * (bListening ? ListenTurnRateScale : 1.0f)); }
 
 void AALSAEQACharacter::StartSprint()
 {
@@ -166,12 +154,12 @@ void AALSAEQACharacter::StartSprint()
 void AALSAEQACharacter::StopSprint()
 {
     if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->SetSprint(false); return; }
-    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    GetCharacterMovement()->MaxWalkSpeed = GetCharacterMovement()->IsCrouching() ? CrouchSpeed : WalkSpeed;
 }
 
 void AALSAEQACharacter::ToggleCrouch()
 {
-    if (bDeathInProgress || bRolling || IsRiding()) return;
+    if (bDeathInProgress || bRolling || IsRiding() || bListening) return;
     if (GetCharacterMovement()->IsCrouching())
     {
         StopCrouching();
@@ -214,7 +202,6 @@ void AALSAEQACharacter::PerformRoll()
     Direction.Z = 0.0f;
     Direction.Normalize();
     if (Direction.IsNearlyZero()) return;
-
     StopSprint();
     if (GetCharacterMovement()->IsCrouching()) StopCrouching();
     bRolling = true;
@@ -223,7 +210,7 @@ void AALSAEQACharacter::PerformRoll()
     LaunchCharacter(Direction * RollStrength, false, false);
     PlayRollPresentation();
     GetWorldTimerManager().SetTimer(RollTimerHandle, this, &AALSAEQACharacter::FinishRoll, RollDuration, false);
-    GetWorldTimerManager().SetTimer(RollCooldownTimerHandle, [this]() { bRollReady = true; }, RollCooldown, false);
+    GetWorldTimerManager().SetTimer(RollCooldownTimerHandle, FTimerDelegate::CreateLambda([this]() { bRollReady = true; }), RollCooldown, false);
 }
 
 void AALSAEQACharacter::FinishRoll()
@@ -279,7 +266,6 @@ bool AALSAEQACharacter::PerformMeleeStrike(bool bHeavy)
     if (bDeathInProgress || !MeleeCombatComponent) return false;
     const bool bStarted = bHeavy ? MeleeCombatComponent->HeavyAttack() : MeleeCombatComponent->LightAttack();
     if (!bStarted) return false;
-
     if (CinematicDirector && bHeavy)
     {
         FALSAEQACinematicRequest Moment;
@@ -288,7 +274,6 @@ bool AALSAEQACharacter::PerformMeleeStrike(bool bHeavy)
         Moment.Duration = 0.75f;
         CinematicDirector->PlayActionMoment(Moment);
     }
-
     UWorld* World = GetWorld();
     if (!World) return true;
     const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 45.0f);
@@ -343,20 +328,46 @@ int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
         AActor* Target = Hit.GetActor();
         if (!IsValid(Target) || DamagedActors.Contains(Target)) continue;
         const FVector HitLocation = Hit.ImpactPoint.IsNearlyZero() ? Target->GetActorLocation() : Hit.ImpactPoint;
+
+        if (UALSAEQAHealthComponent* Health = Target->FindComponentByClass<UALSAEQAHealthComponent>())
+        {
+            if (!Health->IsDead())
+            {
+                FALSAEQADamageInfo DamageInfo;
+                DamageInfo.Amount = FinalDamage;
+                DamageInfo.Type = EALSAEQADamageType::Thunder;
+                DamageInfo.Instigator = this;
+                DamageInfo.HitLocation = HitLocation;
+                Health->ApplyDamageInfo(DamageInfo);
+                DamagedActors.Add(Target);
+                ++HitCount;
+                continue;
+            }
+        }
+
         if (Target->GetClass()->ImplementsInterface(UALSAEQADamageReceiver::StaticClass()))
         {
             FALSAEQADamageInfo DamageInfo;
-            DamageInfo.Amount = FinalDamage; DamageInfo.Type = EALSAEQADamageType::Thunder; DamageInfo.Instigator = this; DamageInfo.HitLocation = HitLocation;
+            DamageInfo.Amount = FinalDamage;
+            DamageInfo.Type = EALSAEQADamageType::Thunder;
+            DamageInfo.Instigator = this;
+            DamageInfo.HitLocation = HitLocation;
             IALSAEQADamageReceiver::Execute_ReceiveALSAEQADamage(Target, DamageInfo);
-            DamagedActors.Add(Target); ++HitCount; continue;
+            DamagedActors.Add(Target);
+            ++HitCount;
+            continue;
         }
+
         TArray<UALSAEQAThunderEnvironmentComponent*> EnvironmentComponents;
         Target->GetComponents<UALSAEQAThunderEnvironmentComponent>(EnvironmentComponents);
         for (UALSAEQAThunderEnvironmentComponent* Environment : EnvironmentComponents)
         {
             if (!IsValid(Environment)) continue;
             FALSAEQADamageInfo ThunderInfo;
-            ThunderInfo.Amount = FinalDamage; ThunderInfo.Type = EALSAEQADamageType::Thunder; ThunderInfo.Instigator = this; ThunderInfo.HitLocation = HitLocation;
+            ThunderInfo.Amount = FinalDamage;
+            ThunderInfo.Type = EALSAEQADamageType::Thunder;
+            ThunderInfo.Instigator = this;
+            ThunderInfo.HitLocation = HitLocation;
             if (Environment->ReceiveThunder(ThunderInfo)) { DamagedActors.Add(Target); ++HitCount; break; }
         }
     }
@@ -377,7 +388,6 @@ void AALSAEQACharacter::ReleaseThunderCharge()
     const float ReleasedPercent = ThunderChargeComponent->ReleaseCharge();
     if (ReleasedPercent <= 0.0f) return;
     ApplyThunderReleaseToTargets(ThunderReleaseDamage * Multiplier);
-
     if (CinematicDirector && ReleasedPercent >= 0.85f)
     {
         FALSAEQACinematicRequest Moment;
@@ -388,106 +398,44 @@ void AALSAEQACharacter::ReleaseThunderCharge()
     }
 }
 
-void AALSAEQACharacter::CancelThunderCharge()
-{
-    if (ThunderChargeComponent) ThunderChargeComponent->CancelCharge();
-}
-
-bool AALSAEQACharacter::ActivateAbility(EALSAEQAAbility Ability)
-{
-    return !bDeathInProgress && AbilityComponent && AbilityComponent->TryActivateAbility(Ability);
-}
+void AALSAEQACharacter::CancelThunderCharge() { if (ThunderChargeComponent) ThunderChargeComponent->CancelCharge(); }
+bool AALSAEQACharacter::ActivateAbility(EALSAEQAAbility Ability) { return !bDeathInProgress && AbilityComponent && AbilityComponent->TryActivateAbility(Ability); }
 
 void AALSAEQACharacter::HandlePlayerDeath()
 {
     if (bDeathInProgress || !IsValid(this)) return;
     bDeathInProgress = true;
-
-    if (GetWorld())
-    {
-        GetWorld()->GetTimerManager().ClearTimer(RespawnTimerHandle);
-    }
-
-    if (RidingComponent && RidingComponent->IsRiding())
-    {
-        RidingComponent->Dismount();
-    }
-    if (ThunderChargeComponent)
-    {
-        ThunderChargeComponent->CancelCharge();
-    }
-
+    if (GetWorld()) GetWorld()->GetTimerManager().ClearTimer(RespawnTimerHandle);
+    if (RidingComponent && RidingComponent->IsRiding()) RidingComponent->Dismount();
+    if (ThunderChargeComponent) ThunderChargeComponent->CancelCharge();
     StopJumping();
-    if (GetCharacterMovement())
-    {
-        GetCharacterMovement()->StopMovementImmediately();
-        GetCharacterMovement()->DisableMovement();
-    }
+    if (GetCharacterMovement()) { GetCharacterMovement()->StopMovementImmediately(); GetCharacterMovement()->DisableMovement(); }
     SetActorEnableCollision(false);
-    if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
-    {
-        DisableInput(PlayerController);
-    }
-
-    if (GetWorld())
-    {
-        GetWorld()->GetTimerManager().SetTimer(
-            RespawnTimerHandle,
-            this,
-            &AALSAEQACharacter::RespawnAtCheckpoint,
-            FMath::Max(0.1f, DeathRespawnDelay),
-            false);
-    }
+    if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) DisableInput(PlayerController);
+    if (GetWorld()) GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, this, &AALSAEQACharacter::RespawnAtCheckpoint, FMath::Max(0.1f, DeathRespawnDelay), false);
 }
 
 void AALSAEQACharacter::RespawnAtCheckpoint()
 {
     if (!IsValid(this)) return;
-
     UALSAEQASaveManager* SaveManager = nullptr;
-    if (UGameInstance* GameInstance = GetGameInstance())
-    {
-        SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>();
-    }
-
+    if (UGameInstance* GameInstance = GetGameInstance()) SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>();
     FALSAEQACheckpointData Checkpoint;
     bool bHasCheckpoint = false;
     if (SaveManager)
     {
         Checkpoint = SaveManager->GetLastCheckpoint();
         bHasCheckpoint = !Checkpoint.CheckpointId.IsNone();
-        if (bHasCheckpoint)
-        {
-            SaveManager->RespawnAtLastCheckpoint();
-        }
+        if (bHasCheckpoint) SaveManager->RespawnAtLastCheckpoint();
     }
-
-    if (bHasCheckpoint)
-    {
-        SetActorLocationAndRotation(Checkpoint.PlayerLocation, Checkpoint.PlayerRotation, false, nullptr, ETeleportType::TeleportPhysics);
-    }
-
-    if (GetCharacterMovement())
-    {
-        GetCharacterMovement()->StopMovementImmediately();
-        GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-    }
-
+    if (bHasCheckpoint) SetActorLocationAndRotation(Checkpoint.PlayerLocation, Checkpoint.PlayerRotation, false, nullptr, ETeleportType::TeleportPhysics);
+    if (GetCharacterMovement()) { GetCharacterMovement()->StopMovementImmediately(); GetCharacterMovement()->SetMovementMode(MOVE_Walking); GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; }
     SetActorEnableCollision(true);
-    if (HealthComponent)
-    {
-        HealthComponent->ResetHealth();
-    }
-
+    if (HealthComponent) HealthComponent->ResetHealth();
     if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
     {
         EnableInput(PlayerController);
-        if (bHasCheckpoint)
-        {
-            PlayerController->SetControlRotation(Checkpoint.PlayerRotation);
-        }
+        if (bHasCheckpoint) PlayerController->SetControlRotation(Checkpoint.PlayerRotation);
     }
-
     bDeathInProgress = false;
 }
