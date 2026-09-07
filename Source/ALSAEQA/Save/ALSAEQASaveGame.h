@@ -31,6 +31,12 @@ public:
     UPROPERTY(BlueprintReadWrite, SaveGame, Category="ALSAEQA|Legacy")
     TArray<FName> PersistentWorldFlags;
 
+    UPROPERTY(BlueprintReadWrite, SaveGame, Category="ALSAEQA|Stage1")
+    TArray<FName> RescuedStageOneWorkerIds;
+
+    UPROPERTY(BlueprintReadWrite, SaveGame, Category="ALSAEQA|Stage1")
+    TArray<FName> DefeatedStageOneSlaverIds;
+
     UPROPERTY(BlueprintReadWrite, SaveGame, Category="ALSAEQA|Companion")
     FALSAEQACompanionStoryProgress CompanionStory;
 
