@@ -13,6 +13,18 @@ enum class EALSAEQADamageType : uint8
     Poison UMETA(DisplayName="Poison")
 };
 
+UENUM(BlueprintType)
+enum class EALSAEQADamageHitRegion : uint8
+{
+    Auto UMETA(DisplayName="Auto Detect"),
+    Head UMETA(DisplayName="Head"),
+    Torso UMETA(DisplayName="Torso"),
+    LeftArm UMETA(DisplayName="Left Arm"),
+    RightArm UMETA(DisplayName="Right Arm"),
+    LeftLeg UMETA(DisplayName="Left Leg"),
+    RightLeg UMETA(DisplayName="Right Leg")
+};
+
 USTRUCT(BlueprintType)
 struct ALSAEQA_API FALSAEQADamageInfo
 {
@@ -29,4 +41,16 @@ struct ALSAEQA_API FALSAEQADamageInfo
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FVector HitLocation = FVector::ZeroVector;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EALSAEQADamageHitRegion HitRegion = EALSAEQADamageHitRegion::Auto;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bCritical = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bKnockout = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bDismemberment = false;
 };
