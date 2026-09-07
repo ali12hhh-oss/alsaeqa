@@ -51,7 +51,7 @@ bool UALSAEQACinematicDirector::StartOpeningCinematic()
     return true;
 }
 
-void UALSAEQACinematicDirector::FinishOpeningCinematic()
+void UALSAEQACharacter::FinishOpeningCinematic()
 {
     OnCinematicEvent.Broadcast(EALSAEQACinematicEvent::Opening);
 }
@@ -65,6 +65,7 @@ bool UALSAEQACinematicDirector::StartStoryBeat(EALSAEQACinematicEvent Event)
     }
 
     OnCinematicEvent.Broadcast(Event);
+    HandleStoryBeat(Event);
     return true;
 }
 
