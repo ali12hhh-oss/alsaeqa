@@ -4,6 +4,9 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 
+const FString UALSAEQAStageOneWorkerPrefix(TEXT("Stage1_Worker_"));
+const FString UALSAEQAStageOneSlaverPrefix(TEXT("Stage1_Slaver_"));
+
 const FString UALSAEQASaveManager::SaveSlotName(TEXT("ALSAEQA_Main"));
 
 bool UALSAEQASaveManager::EnsureSaveData()
@@ -24,10 +27,8 @@ bool UALSAEQASaveManager::BeginNewJourney()
 {
     if (!UGameplayStatics::DeleteGameInSlot(SaveSlotName, 0))
     {
-        // DeleteGameInSlot returns false when no slot exists; that is a valid fresh-start case.
         if (HasSavedJourney()) return false;
     }
-
     SaveData = Cast<UALSAEQASaveGame>(UGameplayStatics::CreateSaveGameObject(UALSAEQASaveGame::StaticClass()));
     if (!SaveData) return false;
     return SaveProgress();
@@ -68,6 +69,8 @@ bool UALSAEQASaveManager::SaveCheckpoint(FName CheckpointId, FName RegionId, int
     return SaveProgress();
 }
 
+bool UALSAEQSAStageOneSaveManagerPlaceholder(){ return true; }
+
 bool UALSAEQASaveManager::RespawnAtLastCheckpoint()
 {
     if (!EnsureSaveData() || SaveData->LastCheckpoint.CheckpointId.IsNone()) return false;
@@ -106,5 +109,40 @@ bool UALSAEQASaveManager::SaveTamedMount(const FALSAEQAMountProfile& Profile)
     SaveData->TamedMountProfiles[Index].TamingProgress = FMath::Max(Profile.TamingProgress, Profile.TamingRequired);
     return SaveProgress();
 }
+
 bool UALSAEQASaveManager::HasTamedMount(FName MountId) const { return SaveData && !MountId.IsNone() && SaveData->TamedMountProfiles.ContainsByPredicate([MountId](const FALSAEQAMountProfile& Profile){ return Profile.MountId == MountId; }); }
 FALSAEQAMountProfile UALSAEQASaveManager::GetTamedMount(FName MountId) const { if (SaveData && !MountId.IsNone()) { const FALSAEQAMountProfile* Found = SaveData->TamedMountProfiles.FindByPredicate([MountId](const FALSAEQAMountProfile& Profile){ return Profile.MountId == MountId; }); if (Found) return *Found; } return FALSAEQAMountProfile(); }
+
+bool UALSAEQASaveManager::RecordStageOneWorkerRescued(FName WorkerId)
+{
+    if (!EnsureSaveData() || WorkerId.IsNone() || SaveData->RescuedStageOneWorkerIds.Contains(WorkerId)) return false;
+    SaveData->RescuedStageOneWorkerIds.Add(WorkerId);
+    return SaveProgress();
+}
+
+bool UALSAEQASaveManager::HasStageOneWorkerRescued(FName WorkerId) const
+{
+    return SaveData && !WorkerId.IsNone() && SaveData->RescuedStageOneWorkerIds.Contains(WorkerId);
+}
+
+bool UALSAEQASaveManager::RecordStageOneSlaverDefeated(FName SlaverId)
+{
+    if (!EnsureSaveData() || SlaverId.IsNone() || SaveData->DefeatedStageOneSlaverIds.Contains(SlaverId)) return false;
+    SaveData->DefeatedStageOneSlaverIds.Add(SlaverId);
+    return SaveProgress();
+}
+
+bool UALSAEQASaveManager::HasStageOneSlaverDefeated(FName SlaverId) const
+{
+    return SaveData && !SlaverId.IsNone() && SaveData->DefeatedStageOneSlaverIds.Contains(SlaverId);
+}
+
+int32 UALSAEQASaveManager::GetStageOneWorkersRescuedCount() const
+{
+    return SaveData ? SaveData->RescuedStageOneWorkerIds.Num() : 0;
+}
+
+int32 UALSAEQASaveManager::GetStageOneSlaversDefeatedCount() const
+{
+    return SaveData ? SaveData->DefeatedStageOneSlaverIds.Num() : 0;
+}
