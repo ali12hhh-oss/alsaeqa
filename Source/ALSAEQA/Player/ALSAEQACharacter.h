@@ -35,6 +35,15 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Thunder") void CancelThunderCharge();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Movement") void StartSprint();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Movement") void StopSprint();
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Movement") void ToggleCrouch();
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Movement") void StartListen();
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Movement") void StopListen();
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Movement") void PerformRoll();
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Movement") bool IsListening() const { return bListening; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Movement") bool IsRolling() const { return bRolling; }
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Movement") void PlayMovementPresentation(FName MovementEvent);
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Movement") void PlayRollPresentation();
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Movement") void PlayListenPresentation(bool bStarted);
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Interaction") bool InteractWithNearest();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding") bool MountOrDismount();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding") bool MountNearestTamedMount();
@@ -71,6 +80,7 @@ protected:
     void ActivateMountStormSummon();
     void ActivateMountThunderSense();
     void ActivateMountStormMode();
+    void FinishRoll();
 
     UFUNCTION()
     void HandlePlayerDeath();
@@ -92,6 +102,11 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAStageObjectiveComponent> StageObjectiveComponent;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float WalkSpeed = 360.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float SprintSpeed = 620.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float CrouchSpeed = 180.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float RollStrength = 720.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float RollDuration = 0.42f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float RollCooldown = 0.65f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float ListenTurnRateScale = 0.35f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Interaction") float InteractionRange = 240.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Riding") float MountSearchRadius = 450.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float MeleeAttackRange = 180.0f;
@@ -106,5 +121,10 @@ private:
     bool PerformMeleeStrike(bool bHeavy);
 
     FTimerHandle RespawnTimerHandle;
+    FTimerHandle RollTimerHandle;
+    FTimerHandle RollCooldownTimerHandle;
     bool bDeathInProgress = false;
+    bool bListening = false;
+    bool bRolling = false;
+    bool bRollReady = true;
 };
