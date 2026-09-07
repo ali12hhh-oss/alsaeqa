@@ -9,52 +9,63 @@ UALSAEQAInjuryComponent::UALSAEQAInjuryComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UALSAEQAInjuryComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    if (ACharacter* Character = Cast<ACharacter>(GetOwner()))
+    {
+        if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
+        {
+            BaseWalkSpeed = Movement->MaxWalkSpeed;
+        }
+    }
+}
+
 void UALSAEQAInjuryComponent::ApplyBodyPartInjury(EALSAEQAInjuryBodyPart BodyPart, float Severity)
 {
     if (State == EALSAEQAInjuryState::Dead || Severity <= 0.0f) return;
-    const float NewSeverity = FMath::Clamp(GetBodyPartSeverity(BodyPart) + Severity, 0.0f, 1.0f);
-    BodyPartSeverity.FindOrAdd(BodyPart) = NewSeverity;
-    PlayInjuryPresentation(BodyPart, NewSeverity);
+    BodyPartSeverity.FindOrAdd(BodyPart) = FMath::Clamp(GetBodyPartSeverity(BodyPart) + Severity, 0.0f, 1.0f);
+    PlayInjuryPresentation(BodyPart, GetBodyPartSeverity(BodyPart));
     OnHitReaction.Broadcast(BodyPart);
     RecalculateState();
+    ApplyOwnerStatePresentation();
 }
 
 void UALSAEQAInjuryComponent::ApplyOrganInjury(EALSAEQAInjuryOrgan Organ, float Severity)
 {
     if (Organ == EALSAEQAInjuryOrgan::None || State == EALSAEQAInjuryState::Dead || Severity <= 0.0f) return;
-    const float NewSeverity = FMath::Clamp(GetOrganSeverity(Organ) + Severity, 0.0f, 1.0f);
-    OrganSeverity.FindOrAdd(Organ) = NewSeverity;
-    PlayOrganInjuryPresentation(Organ, NewSeverity);
+    OrganSeverity.FindOrAdd(Organ) = FMath::Clamp(GetOrganSeverity(Organ) + Severity, 0.0f, 1.0f);
+    PlayOrganInjuryPresentation(Organ, GetOrganSeverity(Organ));
     OnOrganInjured.Broadcast(Organ);
-    if ((Organ == EALSAEQAInjuryOrgan::Heart || Organ == EALSAEQAInjuryOrgan::Lungs) && NewSeverity >= 1.0f)
+    if ((Organ == EALSAEQAInjuryOrgan::Heart || Organ == EALSAEQAInjuryOrgan::Lungs) && GetOrganSeverity(Organ) >= 1.0f)
     {
         MarkDead();
         return;
     }
     RecalculateState();
+    ApplyOwnerStatePresentation();
 }
 
 void UALSAEQAInjuryComponent::SetLimbSevered(EALSAEQAInjuryBodyPart BodyPart, bool bSevered)
 {
     const bool bLimb = BodyPart == EALSAEQAInjuryBodyPart::LeftArm || BodyPart == EALSAEQAInjuryBodyPart::RightArm || BodyPart == EALSAEQAInjuryBodyPart::LeftLeg || BodyPart == EALSAEQAInjuryBodyPart::RightLeg;
     if (!bLimb || State == EALSAEQAInjuryState::Dead) return;
-    if (bSevered)
+    if (bSevered && !SeveredLimbs.Contains(BodyPart))
     {
-        if (!SeveredLimbs.Contains(BodyPart))
-        {
-            SeveredLimbs.Add(BodyPart);
-            BodyPartSeverity.FindOrAdd(BodyPart) = 1.0f;
-            ApplySeveredLimbVisual(BodyPart);
-            PlayDismembermentPresentation(BodyPart);
-            OnLimbChanged.Broadcast(BodyPart);
-            RecalculateState();
-        }
+        SeveredLimbs.Add(BodyPart);
+        BodyPartSeverity.FindOrAdd(BodyPart) = 1.0f;
+        ApplySeveredLimbVisual(BodyPart);
+        PlayDismembermentPresentation(BodyPart);
+        OnLimbChanged.Broadcast(BodyPart);
+        RecalculateState();
+        ApplyOwnerStatePresentation();
     }
-    else if (SeveredLimbs.Remove(BodyPart) > 0)
+    else if (!bSevered && SeveredLimbs.Remove(BodyPart) > 0)
     {
         RestoreLimbVisual(BodyPart);
         OnLimbChanged.Broadcast(BodyPart);
         RecalculateState();
+        ApplyOwnerStatePresentation();
     }
 }
 
@@ -110,7 +121,11 @@ void UALSAEQAInjuryComponent::ResetAfterDeath()
     State = EALSAEQAInjuryState::Healthy;
     if (ACharacter* Character = Cast<ACharacter>(GetOwner()))
     {
-        if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement()) Movement->SetMovementMode(MOVE_Walking);
+        if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
+        {
+            Movement->SetMovementMode(MOVE_Walking);
+            if (BaseWalkSpeed > 0.0f) Movement->MaxWalkSpeed = BaseWalkSpeed;
+        }
         if (USkeletalMeshComponent* Mesh = Character->GetMesh())
         {
             Mesh->SetSimulatePhysics(false);
@@ -138,10 +153,7 @@ float UALSAEQAInjuryComponent::GetOrganSeverity(EALSAEQAInjuryOrgan Organ) const
     return 0.0f;
 }
 
-bool UALSAEQAInjuryComponent::IsLimbSevered(EALSAEQAInjuryBodyPart BodyPart) const
-{
-    return SeveredLimbs.Contains(BodyPart);
-}
+bool UALSAEQAInjuryComponent::IsLimbSevered(EALSAEQAInjuryBodyPart BodyPart) const { return SeveredLimbs.Contains(BodyPart); }
 
 float UALSAEQAInjuryComponent::GetMovementSpeedMultiplier() const
 {
@@ -169,12 +181,10 @@ void UALSAEQAInjuryComponent::RecalculateState()
     float Highest = 0.0f;
     for (const TPair<EALSAEQAInjuryBodyPart, float>& Pair : BodyPartSeverity) Highest = FMath::Max(Highest, Pair.Value);
     for (const TPair<EALSAEQAInjuryOrgan, float>& Pair : OrganSeverity) Highest = FMath::Max(Highest, Pair.Value);
-
     EALSAEQAInjuryState NewState = EALSAEQAInjuryState::Healthy;
     if (Highest >= CriticalThreshold) NewState = EALSAEQAInjuryState::Critical;
     else if (Highest > 0.0f) NewState = EALSAEQAInjuryState::Injured;
     if (Highest >= KnockoutThreshold) NewState = EALSAEQAInjuryState::KnockedOut;
-
     if (NewState != State)
     {
         State = NewState;
@@ -204,7 +214,10 @@ void UALSAEQAInjuryComponent::ApplyOwnerStatePresentation()
                 if (UCapsuleComponent* Capsule = Character->GetCapsuleComponent()) Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
             }
         }
+        return;
     }
+
+    if (BaseWalkSpeed > 0.0f) Movement->MaxWalkSpeed = BaseWalkSpeed * GetMovementSpeedMultiplier();
 }
 
 void UALSAEQAInjuryComponent::ApplySeveredLimbVisual(EALSAEQAInjuryBodyPart BodyPart)
