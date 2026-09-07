@@ -75,7 +75,7 @@ void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
     PlayerInputComponent->BindAction(TEXT("HeavyAttack"), IE_Pressed, this, &AALSAEQACharacter::PerformHeavyAttack);
     PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Pressed, this, &AALSAEQACharacter::StartSprint);
     PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Released, this, &AALSAEQACharacter::StopSprint);
-    PlayerInputComponent->BindAction(TEXT("Mount"), IE_Pressed, this, &AALSAEQACharacter::MountOrDismount);
+    PlayerInputComponent->BindAction(TEXT("Mount"), IE_Pressed, this, &AALSAEQACharacter::HandleMountInput);
     PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Pressed, this, &AALSAEQACharacter::BeginThunderCharge);
     PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Released, this, &AALSAEQACharacter::ReleaseThunderCharge);
     PlayerInputComponent->BindAction(TEXT("MountLightningDash"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningDash);
@@ -88,6 +88,11 @@ void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
     PlayerInputComponent->BindAction(TEXT("MountStormSummon"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormSummon);
     PlayerInputComponent->BindAction(TEXT("MountThunderSense"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountThunderSense);
     PlayerInputComponent->BindAction(TEXT("MountStormMode"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormMode);
+}
+
+void AALSAEQACharacter::HandleMountInput()
+{
+    MountOrDismount();
 }
 
 void AALSAEQACharacter::MoveForward(float Value)
