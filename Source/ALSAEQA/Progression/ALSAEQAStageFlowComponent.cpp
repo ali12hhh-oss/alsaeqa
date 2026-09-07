@@ -15,7 +15,21 @@ UALSAEQAStageFlowComponent::UALSAEQAStageFlowComponent()
 void UALSAEQAStageFlowComponent::BeginPlay()
 {
     Super::BeginPlay();
-    Progression = GetOwner() ? GetOwner()->FindComponentByClass<UALSAEQAProgressionComponent>() : nullptr;
+
+    AActor* Owner = GetOwner();
+    Progression = Owner ? Owner->FindComponentByClass<UALSAEQAProgressionComponent>() : nullptr;
+
+    // The hero owns the stage-flow/objective components. Guarantee that the
+    // canonical progression state exists on the same actor so automatic flow
+    // cannot silently fail just because a Blueprint omitted one component.
+    if (!Progression && Owner)
+    {
+        Progression = NewObject<UALSAEQAProgressionComponent>(Owner, UALSAEQAProgressionComponent::StaticClass(), TEXT("ProgressionComponent"));
+        if (Progression)
+        {
+            Progression->RegisterComponent();
+        }
+    }
 
     if (!Progression || !GetWorld() || !GetWorld()->GetGameInstance())
     {
