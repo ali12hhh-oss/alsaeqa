@@ -1,8 +1,33 @@
 #include "Systems/ALSAEQAHealthComponent.h"
+#include "Systems/ALSAEQAInjuryComponent.h"
+#include "GameFramework/Actor.h"
 
 UALSAEQAHealthComponent::UALSAEQAHealthComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UALSAEQAHealthComponent::BeginPlay()
+{
+    Super::BeginPlay();
+
+    AActor* Owner = GetOwner();
+    if (!Owner) return;
+
+    InjuryComponent = Owner->FindComponentByClass<UALSAEQAInjuryComponent>();
+    if (!InjuryComponent)
+    {
+        InjuryComponent = NewObject<UALSAEQAInjuryComponent>(Owner, TEXT("UniversalInjuryComponent"));
+        if (InjuryComponent)
+        {
+            InjuryComponent->RegisterComponent();
+        }
+    }
+
+    if (InjuryComponent)
+    {
+        InjuryComponent->OnFatalState.AddDynamic(this, &UALSAEQAHealthComponent::HandleInjuryDeath);
+    }
 }
 
 void UALSAEQAHealthComponent::ApplyDamage(float Damage)
@@ -18,6 +43,7 @@ void UALSAEQAHealthComponent::ApplyDamage(float Damage)
     if (Health <= 0.0f)
     {
         bDead = true;
+        if (InjuryComponent) InjuryComponent->MarkDead();
         OnDeath.Broadcast();
     }
 }
@@ -37,7 +63,17 @@ void UALSAEQAHealthComponent::ResetHealth()
 {
     bDead = false;
     Health = MaxHealth;
+    if (InjuryComponent) InjuryComponent->ResetAfterDeath();
     OnHealthChanged.Broadcast(Health, MaxHealth);
+}
+
+void UALSAEQAHealthComponent::HandleInjuryDeath()
+{
+    if (bDead) return;
+    bDead = true;
+    Health = 0.0f;
+    OnHealthChanged.Broadcast(Health, MaxHealth);
+    OnDeath.Broadcast();
 }
 
 float UALSAEQAHealthComponent::GetHealthPercent() const
