@@ -22,6 +22,18 @@ void AALSAEQAEnemyCharacter::BeginPlay()
     Super::BeginPlay();
     if (HealthComponent) HealthComponent->OnDeath.AddDynamic(this, &AALSAEQAEnemyCharacter::HandleDeath);
     AttackCooldownRemaining = 0.0f;
+
+    if (bCountsAsStageOneSlaver && !StageOneSlaverId.IsNone() && GetGameInstance())
+    {
+        if (UALSAEQASaveManager* SaveManager = GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
+        {
+            if (SaveManager->HasStageOneSlaverDefeated(StageOneSlaverId))
+            {
+                bStageObjectiveReported = true;
+                SetEnemyState(EALSAEQAEnemyState::Dead);
+            }
+        }
+    }
 }
 
 void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
@@ -116,7 +128,7 @@ void AALSAEQAEnemyCharacter::HandleDeath()
     bStageObjectiveReported = true;
     SetEnemyState(EALSAEQAEnemyState::Dead);
 
-    if (!bCountsAsStageOneSlaver || !GetWorld()) return;
+    if (!bCountsAsStageOneSlaver || StageOneSlaverId.IsNone() || !GetWorld() || !GetGameInstance()) return;
 
     AALSAEQACharacter* Player = nullptr;
     for (TActorIterator<AALSAEQACharacter> It(GetWorld()); It; ++It)
@@ -129,12 +141,11 @@ void AALSAEQAEnemyCharacter::HandleDeath()
     if (!Player) return;
 
     UALSAEQAStageObjectiveComponent* Objectives = Player->GetStageObjectiveComponent();
-    if (!Objectives) return;
+    UALSAEQASaveManager* SaveManager = GetGameInstance()->GetSubsystem<UALSAEQASaveManager>();
+    if (!Objectives || !SaveManager) return;
 
-    int32 CurrentStage = 1;
-    if (UGameInstance* GameInstance = GetGameInstance())
-    {
-        if (UALSAEQASaveManager* SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>()) CurrentStage = FMath::Max(1, SaveManager->GetStage());
-    }
+    if (!SaveManager->RecordStageOneSlaverDefeated(StageOneSlaverId)) return;
+
+    int32 CurrentStage = SaveManager->GetStage();
     if (CurrentStage == 1) Objectives->RegisterProgress(TEXT("DefeatSlavers"), 1);
 }
