@@ -1,4 +1,5 @@
 #include "Progression/ALSAEQAProgressionComponent.h"
+#include "Progression/ALSAEQAProgressionStageRegistry.h"
 
 namespace
 {
@@ -66,7 +67,7 @@ bool UALSAEQAProgressionComponent::AcquireWeapon(EALSAEQAWeapon Weapon, FName Di
 
 bool UALSAEQAProgressionComponent::AdvanceStage(int32 NewStage)
 {
-    if (NewStage <= CurrentStage || NewStage < 1)
+    if (!IsValidStage(NewStage) || NewStage <= CurrentStage)
     {
         return false;
     }
@@ -74,6 +75,20 @@ bool UALSAEQAProgressionComponent::AdvanceStage(int32 NewStage)
     CurrentStage = NewStage;
     OnProgressionChanged.ExecuteIfBound();
     return true;
+}
+
+bool UALSAEQAProgressionComponent::IsValidStage(int32 StageNumber) const
+{
+    return ALSAEQAProgressionStageRegistry::IsValidStage(StageNumber);
+}
+
+FALSAEQAProgressionStage UALSAEQAProgressionComponent::GetStageDefinition(int32 StageNumber) const
+{
+    if (const FALSAEQAProgressionStage* Stage = ALSAEQAProgressionStageRegistry::FindStage(StageNumber))
+    {
+        return *Stage;
+    }
+    return FALSAEQAProgressionStage();
 }
 
 bool UALSAEQAProgressionComponent::HasPower(EALSAEQAPower Power) const
@@ -113,7 +128,7 @@ bool UALSAEQAProgressionComponent::HasCompletedDiscovery(FName DiscoveryId) cons
 
 void UALSAEQAProgressionComponent::ResetProgression()
 {
-    CurrentStage = 0;
+    CurrentStage = 1;
     UnlockedPowers.Reset();
     AcquiredWeapons.Reset();
     CompletedDiscoveryIds.Reset();
