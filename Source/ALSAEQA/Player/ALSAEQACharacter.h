@@ -35,6 +35,7 @@ public:
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Thunder") void CancelThunderCharge();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Movement") void StartSprint();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Movement") void StopSprint();
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Interaction") bool InteractWithNearest();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding") bool MountOrDismount();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding") bool MountNearestTamedMount();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Riding") bool DismountCurrentMount();
@@ -91,6 +92,7 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAStageObjectiveComponent> StageObjectiveComponent;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float WalkSpeed = 360.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float SprintSpeed = 620.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Interaction") float InteractionRange = 240.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Riding") float MountSearchRadius = 450.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float MeleeAttackRange = 180.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float MeleeAttackRadius = 90.0f;
