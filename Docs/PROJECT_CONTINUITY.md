@@ -40,26 +40,32 @@ Hard rules: connected revisitable world; automatic story-driven stage transition
 - Automatic stage-flow component with delayed transition.
 - Stage objective component with progress/completion/finalization.
 - Stage 1 default objectives: `RescueWorkers` = 1 and `DefeatSlavers` = 1.
+- Real slaver death linkage: only enemies explicitly marked `bCountsAsStageOneSlaver` report `DefeatSlavers`, and each enemy reports at most once.
+- Real worker/prisoner rescue actor: `AALSAEQAWorkerPrisonerActor`; stage-1 rescues report `RescueWorkers` once per worker and fire the Rescue cinematic story beat.
+- Automatic stage transition now fires a dedicated `StageTransition` cinematic story beat after the progression/save update.
 - Cinematic director action moments for heavy combat and high-charge thunder.
 - Hero integration with stage flow/objectives.
 - Real-asset release/import documentation and primitive-fallback prohibition.
 - Master project bible with full project and stage documentation.
 
 ## Engineering queue
-1. Fix/verify `Mount` input through void `HandleMountInput()` wrapper.
-2. Connect real slaver death events to `DefeatSlavers`.
-3. Connect real worker/prisoner rescue events to `RescueWorkers`.
-4. Hook automatic stage change into cinematic transition presentation.
-5. Data-drive later stage objectives.
-6. Animation-notify-driven melee hit windows.
-7. Real climb/ledge traversal and animation/IK fall rescue.
-8. Wind reactions for foliage/cloth/hair/sand.
-9. Complete ThunderBeast Crossing, Sense and correct Storm Charge semantics.
-10. Complete companion AI/combat/rescue/persistence.
-11. Dialogue/quest/event orchestration and Sequencer story events.
-12. Save persistence for story, companion, rescue, discoveries and mounts.
-13. Import/match real final assets; never replace with primitives.
-14. Android optimization/package/build verification when UE 5.8 build hardware exists.
+1. Data-drive later stage objectives.
+2. Animation-notify-driven melee hit windows.
+3. Real climb/ledge traversal and animation/IK fall rescue.
+4. Wind reactions for foliage/cloth/hair/sand.
+5. Complete ThunderBeast Crossing, Sense and correct Storm Charge semantics.
+6. Complete companion AI/combat/rescue/persistence.
+7. Dialogue/quest/event orchestration and Sequencer story events.
+8. Save persistence for story, companion, rescue, discoveries and mounts.
+9. Import/match real final assets; never replace with primitives.
+10. Android optimization/package/build verification when UE 5.8 build hardware exists.
+
+## Stage 1 runtime chain
+`WorkerPrisoner.Interact/Rescue` → `StageObjective.RegisterProgress("RescueWorkers")` + Rescue cinematic event.
+
+`Slaver.HandleDeath` (only `bCountsAsStageOneSlaver=true`) → `StageObjective.RegisterProgress("DefeatSlavers")`.
+
+When both objectives are complete → `StageObjective.FinalizeStageIfReady` → `StageFlow.CompleteCurrentStage` → delayed automatic 1→2 progression → save stage 2 → dedicated `StageTransition` cinematic event → `OnAutomaticStageChanged`.
 
 ## Continuity protocol
 At the beginning of a new chat: read this file, `Docs/ALSAEQA_MASTER_PROJECT_BIBLE.md`, `Docs/DEVELOPMENT_RULES.md`, the original stage roadmap, and latest relevant commits/files. Continue from the existing canonical state. Do not recreate completed systems. After every meaningful implementation block, update this file and commit.
