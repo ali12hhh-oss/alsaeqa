@@ -19,14 +19,16 @@ env:
 jobs:
   android-build:
     name: ALSAEQA Android APK
-    runs-on: [self-hosted, windows]
+    # GitHub-hosted Windows runner. Public repositories get standard hosted
+    # runner usage free and unlimited; Unreal Engine itself is not preinstalled.
+    runs-on: windows-2022
     timeout-minutes: 180
 
     steps:
       - name: 01 - Checkout project
         uses: actions/checkout@v4
 
-      - name: 02 - Verify project and Android runner
+      - name: 02 - Verify project and locate Unreal Engine 5.8
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -37,16 +39,43 @@ jobs:
           if ($project.EngineAssociation -ne '5.8') {
             throw "Expected Unreal Engine 5.8, found $($project.EngineAssociation)."
           }
-          if (-not $env:UE_ROOT) { throw 'UE_ROOT is not configured on this self-hosted runner.' }
+
+          # GitHub-hosted Windows images do not ship with Unreal Engine.
+          # If a future image/cache provides UE 5.8, accept it automatically;
+          # otherwise stop here with an explicit prerequisite message.
+          $candidates = @()
+          if ($env:UE_ROOT) { $candidates += $env:UE_ROOT }
+          $candidates += @(
+            'C:\Program Files\Epic Games\UE_5.8',
+            'C:\Program Files\Epic Games\UE_5.8.0',
+            'D:\Program Files\Epic Games\UE_5.8',
+            'D:\Program Files\Epic Games\UE_5.8.0'
+          )
+
+          $ueRoot = $null
+          foreach ($candidate in $candidates) {
+            if ($candidate -and (Test-Path (Join-Path $candidate 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'))) {
+              $ueRoot = $candidate
+              break
+            }
+          }
+
+          if (-not $ueRoot) {
+            Write-Host 'GitHub-hosted Windows runner is ready, but Unreal Engine 5.8 is not installed on the image.'
+            Write-Host 'The workflow has been migrated away from self-hosted runners.'
+            Write-Host 'A UE 5.8 installation/cache or an authenticated Epic installation step is still required before a full Unreal APK build can run.'
+            throw 'Unreal Engine 5.8 prerequisite is unavailable on this GitHub-hosted runner.'
+          }
+
+          $editor = Join-Path $ueRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
+          $uat = Join-Path $ueRoot 'Engine\Build\BatchFiles\RunUAT.bat'
+          if (-not (Test-Path $editor)) { throw "UnrealEditor-Cmd.exe not found: $editor" }
+          if (-not (Test-Path $uat)) { throw "RunUAT.bat not found: $uat" }
 
           Write-Host "Project: ALSAEQA"
           Write-Host "Engine: Unreal Engine $($project.EngineAssociation)"
-          Write-Host "UE_ROOT: $env:UE_ROOT"
-
-          $editor = Join-Path $env:UE_ROOT 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
-          $uat = Join-Path $env:UE_ROOT 'Engine\Build\BatchFiles\RunUAT.bat'
-          if (-not (Test-Path $editor)) { throw "UnrealEditor-Cmd.exe not found: $editor" }
-          if (-not (Test-Path $uat)) { throw "RunUAT.bat not found: $uat" }
+          Write-Host "UE_ROOT: $ueRoot"
+          "UE_ROOT=$ueRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
           "UE_EDITOR=$editor" | Out-File -FilePath $env:GITHUB_ENV -Append
           "UAT=$uat" | Out-File -FilePath $env:GITHUB_ENV -Append
 
