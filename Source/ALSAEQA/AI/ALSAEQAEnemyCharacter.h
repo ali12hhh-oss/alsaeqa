@@ -39,9 +39,7 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
-
     UFUNCTION() void HandleDeath();
-
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAHealthComponent> HealthComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAVisualAssetComponent> VisualAssetComponent;
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|AI") EALSAEQAEnemyState EnemyState = EALSAEQAEnemyState::Idle;
@@ -51,7 +49,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float AttackRange = 180.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float AttackDamage = 12.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float AttackCooldown = 1.25f;
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Progression|Stage1") bool bCountsAsStageOneSlaver = false;
 
 private:
     float AttackCooldownRemaining = 0.0f;
+    bool bStageObjectiveReported = false;
 };
