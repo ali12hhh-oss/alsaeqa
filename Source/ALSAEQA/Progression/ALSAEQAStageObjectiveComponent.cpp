@@ -22,7 +22,10 @@ void UALSAEQAStageObjectiveComponent::BeginPlay()
         }
         if (StageNumber == 1)
         {
-            ObjectiveRequirements.Add(TEXT("RescueWorkers"), 1);
+            // Stage 1 is a real mine rescue, not a single-worker objective.
+            // Five separate worker actors must be rescued before the objective
+            // can complete. Each worker reports +1 exactly once.
+            ObjectiveRequirements.Add(TEXT("RescueWorkers"), 5);
             ObjectiveRequirements.Add(TEXT("DefeatSlavers"), 1);
         }
     }
