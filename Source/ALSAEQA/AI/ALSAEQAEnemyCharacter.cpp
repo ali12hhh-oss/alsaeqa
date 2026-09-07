@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Player/ALSAEQACharacter.h"
+#include "Progression/ALSAEQAStageObjectiveComponent.h"
 #include "Save/ALSAEQASaveManager.h"
 #include "Engine/GameInstance.h"
 
@@ -33,10 +34,7 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
     int32 CurrentStage = 1;
     if (UGameInstance* GameInstance = GetGameInstance())
     {
-        if (UALSAEQASaveManager* SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>())
-        {
-            CurrentStage = FMath::Max(1, SaveManager->GetStage());
-        }
+        if (UALSAEQASaveManager* SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>()) CurrentStage = FMath::Max(1, SaveManager->GetStage());
     }
 
     const float Progress = static_cast<float>(CurrentStage - 1);
@@ -54,8 +52,7 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
         for (TActorIterator<AALSAEQACharacter> It(GetWorld()); It; ++It)
         {
             AALSAEQACharacter* Candidate = *It;
-            if (IsValid(Candidate) && Candidate->GetHealthComponent() && !Candidate->GetHealthComponent()->IsDead() &&
-                FVector::DistSquared(GetActorLocation(), Candidate->GetActorLocation()) <= FMath::Square(EffectiveDetectionRange))
+            if (IsValid(Candidate) && Candidate->GetHealthComponent() && !Candidate->GetHealthComponent()->IsDead() && FVector::DistSquared(GetActorLocation(), Candidate->GetActorLocation()) <= FMath::Square(EffectiveDetectionRange))
             {
                 Target = Candidate;
                 SetTargetActor(Target);
@@ -64,19 +61,9 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
         }
     }
 
-    if (!IsValid(Target))
-    {
-        SetEnemyState(EALSAEQAEnemyState::Idle);
-        return;
-    }
-
+    if (!IsValid(Target)) { SetEnemyState(EALSAEQAEnemyState::Idle); return; }
     const float Distance = FVector::Dist(GetActorLocation(), Target->GetActorLocation());
-    if (Distance > EffectiveDetectionRange)
-    {
-        TargetActor.Reset();
-        SetEnemyState(EALSAEQAEnemyState::Idle);
-        return;
-    }
+    if (Distance > EffectiveDetectionRange) { TargetActor.Reset(); SetEnemyState(EALSAEQAEnemyState::Idle); return; }
 
     if (Distance <= EffectiveAttackRange)
     {
@@ -123,4 +110,31 @@ float AALSAEQAEnemyCharacter::ReceiveALSAEQADamage_Implementation(const FALSAEQA
     return DamageInfo.Amount;
 }
 
-void AALSAEQAEnemyCharacter::HandleDeath() { SetEnemyState(EALSAEQAEnemyState::Dead); }
+void AALSAEQAEnemyCharacter::HandleDeath()
+{
+    if (bStageObjectiveReported) return;
+    bStageObjectiveReported = true;
+    SetEnemyState(EALSAEQAEnemyState::Dead);
+
+    if (!bCountsAsStageOneSlaver || !GetWorld()) return;
+
+    AALSAEQACharacter* Player = nullptr;
+    for (TActorIterator<AALSAEQACharacter> It(GetWorld()); It; ++It)
+    {
+        if (AALSAEQACharacter* Candidate = *It)
+        {
+            if (IsValid(Candidate)) { Player = Candidate; break; }
+        }
+    }
+    if (!Player) return;
+
+    UALSAEQAStageObjectiveComponent* Objectives = Player->GetStageObjectiveComponent();
+    if (!Objectives) return;
+
+    int32 CurrentStage = 1;
+    if (UGameInstance* GameInstance = GetGameInstance())
+    {
+        if (UALSAEQASaveManager* SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>()) CurrentStage = FMath::Max(1, SaveManager->GetStage());
+    }
+    if (CurrentStage == 1) Objectives->RegisterProgress(TEXT("DefeatSlavers"), 1);
+}
