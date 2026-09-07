@@ -24,7 +24,6 @@ void AALSAEQAWorkerPrisonerActor::BeginPlay()
     GuardPressurePauseRemaining = 0.0f;
 
     if (!bCountsAsStageOneWorker || WorkerId.IsNone() || !GetGameInstance()) return;
-
     if (UALSAEQASaveManager* SaveManager = GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
     {
         if (SaveManager->HasStageOneWorkerRescued(WorkerId))
@@ -39,7 +38,6 @@ void AALSAEQAWorkerPrisonerActor::BeginPlay()
 void AALSAEQAWorkerPrisonerActor::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-
     GuardPressurePauseRemaining = FMath::Max(0.0f, GuardPressurePauseRemaining - DeltaSeconds);
 
     if (bRescueInProgress && IsRescueThreatening())
@@ -48,10 +46,7 @@ void AALSAEQAWorkerPrisonerActor::Tick(float DeltaSeconds)
         return;
     }
 
-    if (RescueState == EALSAEQAWorkerRescueState::Escaping)
-    {
-        UpdateEscape(DeltaSeconds);
-    }
+    if (RescueState == EALSAEQAWorkerRescueState::Escaping) UpdateEscape(DeltaSeconds);
 }
 
 void AALSAEQAWorkerPrisonerActor::Interact_Implementation(AActor* Interactor)
@@ -75,13 +70,11 @@ bool AALSAEQAWorkerPrisonerActor::IsRescueThreatening() const
 {
     UWorld* World = GetWorld();
     if (!World) return true;
-
     const FVector WorkerLocation = GetActorLocation();
     for (TActorIterator<AALSAEQAEnemyCharacter> It(World); It; ++It)
     {
         const AALSAEQAEnemyCharacter* Enemy = *It;
         if (!IsValid(Enemy) || Enemy->GetEnemyState() == EALSAEQAEnemyState::Dead || Enemy->GetEnemyState() == EALSAEQAEnemyState::Stunned) continue;
-
         const bool bNearWorker = FVector::DistSquared2D(Enemy->GetActorLocation(), WorkerLocation) <= FMath::Square(RescueThreatRadius);
         const bool bTargetingRescuer = RescueInstigator.IsValid() && Enemy->GetTargetActor() == RescueInstigator.Get();
         if (bNearWorker || bTargetingRescuer) return true;
@@ -92,7 +85,6 @@ bool AALSAEQAWorkerPrisonerActor::IsRescueThreatening() const
 bool AALSAEQAWorkerPrisonerActor::Rescue(AActor* Rescuer)
 {
     if (bRescued || bRescueInProgress || RescueState != EALSAEQAWorkerRescueState::Captive || !bCountsAsStageOneWorker || WorkerId.IsNone() || !Rescuer) return false;
-
     AALSAEQACharacter* Hero = Cast<AALSAEQACharacter>(Rescuer);
     if (!Hero) return false;
 
@@ -112,7 +104,6 @@ bool AALSAEQAWorkerPrisonerActor::Rescue(AActor* Rescuer)
     RescueInstigator = Hero;
     bRescueInProgress = true;
     RescueState = EALSAEQAWorkerRescueState::BeingRescued;
-
     if (IsRescueThreatening())
     {
         bRescueInProgress = false;
@@ -144,22 +135,19 @@ void AALSAEQAWorkerPrisonerActor::FinishRescue()
     BeginEscape();
     InteractionPrompt = NSLOCTEXT("ALSAEQA", "WorkerEscapingPrompt", "العامل يهرب إلى مكان آمن");
 
-    if (FVector::DistSquared2D(GetActorLocation(), SafePoint) <= FMath::Square(SafePointRadius))
-    {
-        CompleteSafeArrival();
-    }
+    if (FVector::DistSquared2D(GetActorLocation(), SafePoint) <= FMath::Square(SafePointRadius)) CompleteSafeArrival();
 }
 
 void AALSAEQAWorkerPrisonerActor::BeginEscape()
 {
     RescueState = EALSAEQAWorkerRescueState::Escaping;
     PlayWorkerEscapePresentation();
+    OnWorkerEscapeStarted.Broadcast(this);
 }
 
 void AALSAEQAWorkerPrisonerActor::UpdateEscape(float DeltaSeconds)
 {
     if (bRescued || !GetWorld() || GuardPressurePauseRemaining > 0.0f) return;
-
     const FVector Current = GetActorLocation();
     FVector ToSafe = SafePoint - Current;
     ToSafe.Z = 0.0f;
@@ -176,7 +164,6 @@ void AALSAEQAWorkerPrisonerActor::UpdateEscape(float DeltaSeconds)
 void AALSAEQAWorkerPrisonerActor::CompleteSafeArrival()
 {
     if (bRescued) return;
-
     AALSAEQACharacter* Hero = nullptr;
     if (GetWorld())
     {
@@ -185,7 +172,6 @@ void AALSAEQAWorkerPrisonerActor::CompleteSafeArrival()
             if (IsValid(*It)) { Hero = *It; break; }
         }
     }
-
     if (!Hero || !Hero->GetProgressionComponent() || !Hero->GetStageObjectiveComponent() || Hero->GetProgressionComponent()->GetCurrentStage() != 1) return;
 
     UALSAEQASaveManager* SaveManager = GetGameInstance() ? GetGameInstance()->GetSubsystem<UALSAEQASaveManager>() : nullptr;
@@ -196,18 +182,13 @@ void AALSAEQAWorkerPrisonerActor::CompleteSafeArrival()
     RescueState = EALSAEQAWorkerRescueState::Safe;
     InteractionPrompt = RescuedInteractionPrompt;
     PlayWorkerSafePresentation();
-
-    if (UALSAEQACinematicDirector* Cinematic = Hero->GetCinematicDirector())
-    {
-        Cinematic->StartStoryBeat(EALSAEQACinematicEvent::Rescue);
-    }
+    if (UALSAEQACinematicDirector* Cinematic = Hero->GetCinematicDirector()) Cinematic->StartStoryBeat(EALSAEQACinematicEvent::Rescue);
     OnWorkerRescued.Broadcast(this);
 }
 
 void AALSAEQAWorkerPrisonerActor::CancelRescue()
 {
     if (!bRescueInProgress && RescueState != EALSAEQAWorkerRescueState::BeingRescued) return;
-
     GetWorldTimerManager().ClearTimer(RescueTimerHandle);
     bRescueInProgress = false;
     RescueInstigator.Reset();
