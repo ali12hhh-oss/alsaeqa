@@ -1,6 +1,8 @@
 #include "Systems/ALSAEQAHealthComponent.h"
 #include "Systems/ALSAEQAInjuryComponent.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UALSAEQAHealthComponent::UALSAEQAHealthComponent()
 {
@@ -31,7 +33,21 @@ void UALSAEQAHealthComponent::ApplyDamage(float Damage)
 {
     if (bDead || Damage <= 0.0f) return;
 
-    Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
+    FALSAEQADamageInfo Info;
+    Info.Amount = Damage;
+    Info.Type = EALSAEQADamageType::Physical;
+    Info.Instigator = nullptr;
+    Info.HitLocation = GetOwner() ? GetOwner()->GetActorLocation() : FVector::ZeroVector;
+    ApplyDamageInfo(Info);
+}
+
+void UALSAEQAHealthComponent::ApplyDamageInfo(const FALSAEQADamageInfo& DamageInfo)
+{
+    if (bDead || DamageInfo.Amount <= 0.0f) return;
+
+    ApplyInjuryFromDamage(DamageInfo);
+
+    Health = FMath::Clamp(Health - DamageInfo.Amount, 0.0f, MaxHealth);
     OnHealthChanged.Broadcast(Health, MaxHealth);
 
     if (Health <= 0.0f)
@@ -41,6 +57,45 @@ void UALSAEQAHealthComponent::ApplyDamage(float Damage)
         {
             bDead = true;
             OnDeath.Broadcast();
+        }
+    }
+}
+
+void UALSAEQAHealthComponent::ApplyInjuryFromDamage(const FALSAEQADamageInfo& DamageInfo)
+{
+    if (!InjuryComponent || !GetOwner()) return;
+
+    const float Severity = FMath::Clamp(DamageInfo.Amount / FMath::Max(MaxHealth, 1.0f) * 2.0f, 0.05f, 1.0f);
+    const FVector LocalHit = GetOwner()->GetActorTransform().InverseTransformPosition(DamageInfo.HitLocation);
+    const float Height = FMath::Max(GetOwner()->GetSimpleCollisionHalfHeight(), 1.0f);
+    const float NormalizedHeight = LocalHit.Z / Height;
+    const float Lateral = FMath::Abs(LocalHit.Y);
+
+    EALSAEQAInjuryBodyPart Part = EALSAEQAInjuryBodyPart::Torso;
+    if (NormalizedHeight > 0.68f)
+    {
+        Part = EALSAEQAInjuryBodyPart::Head;
+    }
+    else if (NormalizedHeight < -0.35f)
+    {
+        Part = LocalHit.Y >= 0.0f ? EALSAEQAInjuryBodyPart::RightLeg : EALSAEQAInjuryBodyPart::LeftLeg;
+    }
+    else if (Lateral > Height * 0.55f)
+    {
+        Part = LocalHit.Y >= 0.0f ? EALSAEQAInjuryBodyPart::RightArm : EALSAEQAInjuryBodyPart::LeftArm;
+    }
+
+    InjuryComponent->ApplyBodyPartInjury(Part, Severity);
+
+    // Heavy head/torso impacts can become critical without inventing a separate damage model.
+    if ((Part == EALSAEQAInjuryBodyPart::Head || Part == EALSAEQAInjuryBodyPart::Torso) && DamageInfo.Amount >= 35.0f)
+    {
+        const EALSAEQAInjuryOrgan Organ = Part == EALSAEQAInjuryBodyPart::Head
+            ? EALSAEQAInjuryOrgan::None
+            : EALSAEQAInjuryOrgan::Lungs;
+        if (Organ != EALSAEQAInjuryOrgan::None)
+        {
+            InjuryComponent->ApplyOrganInjury(Organ, FMath::Clamp(Severity * 0.75f, 0.1f, 0.9f));
         }
     }
 }
