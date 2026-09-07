@@ -31,16 +31,13 @@ Write-Host "Resolving ALSAEQA asset release '$ReleaseTag'..."
 try {
     $release = Invoke-RestMethod -Uri $releaseUrl -Headers $headers -Method Get
 } catch {
-    throw "Asset release '$ReleaseTag' was not found or is not accessible. Publish the release and upload ALSAEQA_REAL_ASSETS.zip first. Details: $($_.Exception.Message)"
+    throw "Asset release '$ReleaseTag' was not found or is not accessible. Publish the release and upload the required assets first. Details: $($_.Exception.Message)"
 }
 
 $downloadRoot = Join-Path $env:RUNNER_TEMP "alsaeqa-assets-$ReleaseTag"
-if (Test-Path $downloadRoot) { Remove-Item -LiteralPath $downloadRoot -Recurse -Force }
-New-Item -ItemType Directory -Path $downloadRoot | Out-Null
+if (Test-Path -LiteralPath $downloadRoot) { Remove-Item -LiteralPath $downloadRoot -Recurse -Force }
+New-Item -ItemType Directory -Path $downloadRoot -Force | Out-Null
 $allSourceRoots = @()
-$extractRoot = Join-Path $downloadRoot 'source'
-if (Test-Path $extractRoot) { Remove-Item -LiteralPath $itemExtractRoot -Recurse -Force }
-New-Item -ItemType Directory -Path $extractRoot | Out-Null
 
 $assetsByName = @{}
 foreach ($asset in $release.assets) { $assetsByName[$asset.name] = $asset }
@@ -57,7 +54,7 @@ foreach ($item in $manifest.assets) {
         $actual = Get-Sha256 $archivePath
         if ($actual -ne $item.sha256.ToLowerInvariant()) { throw "SHA-256 mismatch for '$($asset.name)'. Expected $($item.sha256), got $actual." }
     } else {
-        Write-Warning "SHA-256 is not pinned yet for '$($asset.name)'. Pin it after the final Release upload."
+        Write-Warning "SHA-256 is not pinned yet for '$($asset.name)'."
     }
 
     $destination = Join-Path $ProjectRoot $item.destination
@@ -65,23 +62,22 @@ foreach ($item in $manifest.assets) {
     New-Item -ItemType Directory -Path $destination -Force | Out-Null
 
     $itemExtractRoot = Join-Path $downloadRoot ([IO.Path]::GetFileNameWithoutExtension([IO.Path]::GetFileNameWithoutExtension($asset.name)))
-    if (Test-Path $itemExtractRoot) { Remove-Item -LiteralPath $itemExtractRoot -Recurse -Force }
+    if (Test-Path -LiteralPath $itemExtractRoot) { Remove-Item -LiteralPath $itemExtractRoot -Recurse -Force }
     New-Item -ItemType Directory -Path $itemExtractRoot -Force | Out-Null
     Write-Host "Extracting $($asset.name)..."
     Expand-Archive -LiteralPath $archivePath -DestinationPath $itemExtractRoot -Force
 
-    # The release contains source packs that may themselves be ZIP files.
-    # Expand those nested packs recursively so the Unreal import stage can see
-    # all authored FBX/OBJ/GLTF files without committing the binaries to Git.
-    $expanded = $true
+    # Expand nested ZIP packs inside THIS release item only.
     $expandedArchives = @{}
+    $expanded = $true
     while ($expanded) {
         $expanded = $false
-        $nested = @(Get-ChildItem -LiteralPath $extractRoot -Recurse -File -Filter '*.zip' -ErrorAction SilentlyContinue)
+        $nested = @(Get-ChildItem -LiteralPath $itemExtractRoot -Recurse -File -Filter '*.zip' -ErrorAction SilentlyContinue)
         foreach ($nestedZip in $nested) {
             $key = $nestedZip.FullName.ToLowerInvariant()
             if ($expandedArchives.ContainsKey($key)) { continue }
             $expandedArchives[$key] = $true
+
             $nestedTarget = Join-Path $nestedZip.DirectoryName ([IO.Path]::GetFileNameWithoutExtension($nestedZip.Name))
             if (Test-Path -LiteralPath $nestedTarget) { Remove-Item -LiteralPath $nestedTarget -Recurse -Force }
             New-Item -ItemType Directory -Path $nestedTarget -Force | Out-Null
@@ -91,19 +87,19 @@ foreach ($item in $manifest.assets) {
         }
     }
 
-    # Keep raw source packs outside Content. Unreal must import FBX/OBJ/etc.
-    # into .uasset assets before they can be cooked.
-    $sourceRoot = $extractRoot
+    $sourceRoot = $itemExtractRoot
     $entries = @(Get-ChildItem -LiteralPath $itemExtractRoot -Force)
     if ($entries.Count -eq 1 -and $entries[0].PSIsContainer -and $entries[0].Name -eq 'ALSAEQA_REAL_ASSETS') {
         $sourceRoot = $entries[0].FullName
     }
-    
+
+    $allSourceRoots += $sourceRoot
+    Write-Host "Authored source root: $sourceRoot"
 }
 
-
-$allSourceRoots | ConvertTo-Json -Compress | Out-File -FilePath (Join-Path $downloadRoot 'source-roots.json') -Encoding utf8
-"ALSAEQA_ASSET_SOURCE_ROOTS=$(Join-Path $downloadRoot 'source-roots.json')" | Out-File -FilePath $env:GITHUB_ENV -Append
+$sourceRootsPath = Join-Path $downloadRoot 'source-roots.json'
+$allSourceRoots | ConvertTo-Json -Compress | Out-File -FilePath $sourceRootsPath -Encoding utf8
+"ALSAEQA_ASSET_SOURCE_ROOTS=$sourceRootsPath" | Out-File -FilePath $env:GITHUB_ENV -Append
 
 $contentRoot = Join-Path $ProjectRoot 'Content'
 $uassetCount = @(Get-ChildItem -LiteralPath $contentRoot -Recurse -File -Filter '*.uasset' -ErrorAction SilentlyContinue).Count
