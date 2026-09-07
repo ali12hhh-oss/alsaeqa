@@ -18,17 +18,6 @@ enum class EALSAEQAWorkerRescueMethod : uint8
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAWorkerRescuedSignature, AALSAEQAWorkerPrisonerActor*, Worker);
 
-/**
- * Stage-1 worker/prisoner rescue actor.
- * Place one instance for every worker that must be freed in the mine.
- * Rescue is deliberately one-shot so repeated interaction cannot inflate
- * the RescueWorkers objective.
- *
- * Each worker can use a different authored rescue method. The method and
- * RescueSequenceTag are exposed to Blueprint so the real cage/chain/lift
- * assets and animation can provide distinct presentations without changing
- * the progression rules.
- */
 UCLASS(Blueprintable)
 class ALSAEQA_API AALSAEQAWorkerPrisonerActor : public AALSAEQAInteractable
 {
@@ -51,20 +40,22 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue")
     FName GetRescueSequenceTag() const { return RescueSequenceTag; }
 
+    /** Stable per-instance save identifier, e.g. Worker_Mine_01. */
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue")
+    FName WorkerId = NAME_None;
+
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue")
     bool bCountsAsStageOneWorker = true;
 
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue")
     EALSAEQAWorkerRescueMethod RescueMethod = EALSAEQAWorkerRescueMethod::BreakChain;
 
-    /** Optional authored identifier, e.g. Worker_Cage_01 or Worker_Lift_02. */
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue")
     FName RescueSequenceTag = NAME_None;
 
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Rescue")
     FALSAEQAWorkerRescuedSignature OnWorkerRescued;
 
-    /** Lets the real Blueprint presentation animate the specific rescue method. */
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue")
     void PlayRescuePresentation(EALSAEQAWorkerRescueMethod Method, FName SequenceTag);
 
