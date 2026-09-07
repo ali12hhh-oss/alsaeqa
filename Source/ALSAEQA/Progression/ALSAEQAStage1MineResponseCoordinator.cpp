@@ -17,16 +17,28 @@ void UALSAEQAStage1MineResponseCoordinator::BeginPlay()
     Super::BeginPlay();
     if (!GetOwner() || !GetOwner()->GetWorld()) return;
 
-    for (TActorIterator<AALSAEQAWorkerPrisonerActor> It(GetOwner()->GetWorld()); It; ++It) RegisterWorker(*It);
-    for (TActorIterator<AALSAEQAEnemyCharacter> It(GetOwner()->GetWorld()); It; ++It) RegisterMineGuard(*It);
+    for (TActorIterator<AALSAEQAWorkerPrisonerActor> It(GetOwner()->GetWorld()); It; ++It)
+    {
+        RegisterWorker(*It);
+    }
+
+    for (TActorIterator<AALSAEQAEnemyCharacter> It(GetOwner()->GetWorld()); It; ++It)
+    {
+        RegisterMineGuard(*It);
+    }
 
     int32 SavedWorkers = 0;
     if (UGameInstance* GI = GetOwner()->GetGameInstance())
     {
-        if (UALSAEQASaveManager* Save = GI->GetSubsystem<UALSAEQASaveManager>()) SavedWorkers = Save->GetStageOneWorkersRescuedCount();
+        if (UALSAEQASaveManager* Save = GI->GetSubsystem<UALSAEQASaveManager>())
+        {
+            SavedWorkers = Save->GetStageOneWorkersRescuedCount();
+        }
     }
+
     WorkersRescued = FMath::Clamp(SavedWorkers, 0, Workers.Num());
     ResponseLevel = FMath::Clamp(WorkersRescued, 0, MaxResponseLevel);
+    ValidateStage1Setup();
     RefreshGuardAssignments();
 }
 
@@ -40,7 +52,7 @@ void UALSAEQAStage1MineResponseCoordinator::RegisterWorker(AALSAEQAWorkerPrisone
 
 void UALSAEQAStage1MineResponseCoordinator::RegisterMineGuard(AALSAEQAEnemyCharacter* Guard)
 {
-    if (!IsValid(Guard) || Guards.Contains(Guard)) return;
+    if (!IsValid(Guard) || Guards.Contains(Guard) || !Guard->bStageOneMineGuard) return;
     Guards.Add(Guard);
 }
 
@@ -61,6 +73,24 @@ void UALSAEQAStage1MineResponseCoordinator::HandleWorkerRescued(AALSAEQAWorkerPr
     PlayMineResponsePresentation(ResponseLevel, Worker);
 }
 
+void UALSAEQAStage1MineResponseCoordinator::ValidateStage1Setup() const
+{
+    if (Workers.Num() < RequiredWorkers)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ALSAEQA Stage 1 requires at least %d counted workers; found %d."), RequiredWorkers, Workers.Num());
+    }
+
+    if (Guards.Num() < MinimumMineGuards)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ALSAEQA Stage 1 requires at least %d mine guards; found %d."), MinimumMineGuards, Guards.Num());
+    }
+
+    if (Guards.Num() <= Workers.Num())
+    {
+        UE_LOG(LogTemp, Error, TEXT("ALSAEQA Stage 1 requires more mine guards than counted workers; guards=%d workers=%d."), Guards.Num(), Workers.Num());
+    }
+}
+
 void UALSAEQAStage1MineResponseCoordinator::RefreshGuardAssignments()
 {
     if (!GetOwner() || !GetOwner()->GetWorld()) return;
@@ -74,7 +104,10 @@ void UALSAEQAStage1MineResponseCoordinator::RefreshGuardAssignments()
     TArray<AALSAEQAWorkerPrisonerActor*> EscapingWorkers;
     for (AALSAEQAWorkerPrisonerActor* Worker : Workers)
     {
-        if (IsValid(Worker) && Worker->GetRescueState() == EALSAEQAWorkerRescueState::Escaping) EscapingWorkers.Add(Worker);
+        if (IsValid(Worker) && Worker->GetRescueState() == EALSAEQAWorkerRescueState::Escaping)
+        {
+            EscapingWorkers.Add(Worker);
+        }
     }
 
     int32 Assigned = 0;
@@ -83,13 +116,20 @@ void UALSAEQAStage1MineResponseCoordinator::RefreshGuardAssignments()
     for (AALSAEQAEnemyCharacter* Guard : Guards)
     {
         if (!IsValid(Guard) || Guard->GetEnemyState() == EALSAEQAEnemyState::Dead || Assigned >= DesiredAssignments) continue;
+
         AALSAEQAWorkerPrisonerActor* NearestWorker = nullptr;
         float BestDistanceSq = TNumericLimits<float>::Max();
         for (AALSAEQAWorkerPrisonerActor* Worker : EscapingWorkers)
         {
-            const float DistanceSq = FVector::DistSquared(Guard->GetActorLocation(), Worker->GetActorLocation());
-            if (DistanceSq < BestDistanceSq) { BestDistanceSq = DistanceSq; NearestWorker = Worker; }
+            if (!IsValid(Worker)) continue;
+            const float DistanceSq = FVector::DistSquared2D(Guard->GetActorLocation(), Worker->GetActorLocation());
+            if (DistanceSq < BestDistanceSq)
+            {
+                BestDistanceSq = DistanceSq;
+                NearestWorker = Worker;
+            }
         }
+
         if (NearestWorker)
         {
             Guard->SetTargetActor(NearestWorker);
@@ -102,7 +142,10 @@ void UALSAEQAStage1MineResponseCoordinator::RefreshGuardAssignments()
     {
         for (AALSAEQAEnemyCharacter* Guard : Guards)
         {
-            if (IsValid(Guard) && Guard->GetEnemyState() != EALSAEQAEnemyState::Dead) Guard->SetTargetActor(Hero);
+            if (IsValid(Guard) && Guard->GetEnemyState() != EALSAEQAEnemyState::Dead)
+            {
+                Guard->SetTargetActor(Hero);
+            }
         }
     }
 }
