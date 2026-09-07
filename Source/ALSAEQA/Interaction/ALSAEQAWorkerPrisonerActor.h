@@ -39,6 +39,7 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Rescue") bool Rescue(AActor* Rescuer);
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Rescue") void SetSafePoint(FVector NewSafePoint);
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Rescue") void NotifyGuardPressure(AActor* Guard);
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue") bool IsRescued() const { return bRescued; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue") bool IsRescueInProgress() const { return bRescueInProgress; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue") bool IsSafe() const { return RescueState == EALSAEQAWorkerRescueState::Safe; }
@@ -61,6 +62,7 @@ public:
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue") void PlayRescueInterruptedPresentation();
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue") void PlayWorkerEscapePresentation();
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue") void PlayWorkerSafePresentation();
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue") void PlayWorkerGuardPressurePresentation(AActor* Guard);
 
 protected:
     virtual void BeginPlay() override;
