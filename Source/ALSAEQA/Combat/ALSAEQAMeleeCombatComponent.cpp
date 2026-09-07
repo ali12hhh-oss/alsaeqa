@@ -72,6 +72,9 @@ bool UALSAEQAMeleeCombatComponent::TryHitActor(AActor* Target, float Damage, EAL
     Info.Type = DamageType;
     Info.Instigator = GetOwner();
     Info.HitLocation = Target->GetActorLocation();
+    Info.HitRegion = EALSAEQADamageHitRegion::Auto;
+    Info.bCritical = Damage >= HeavyDamage;
+    Info.bKnockout = Damage >= HeavyDamage * 1.5f;
     Health->ApplyDamageInfo(Info);
     return true;
 }
