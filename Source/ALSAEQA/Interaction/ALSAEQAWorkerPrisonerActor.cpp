@@ -4,6 +4,8 @@
 #include "Progression/ALSAEQAProgressionComponent.h"
 #include "Progression/ALSAEQAStageObjectiveComponent.h"
 #include "Cinematic/ALSAEQACinematicDirector.h"
+#include "Save/ALSAEQASaveManager.h"
+#include "Engine/GameInstance.h"
 
 AALSAEQAWorkerPrisonerActor::AALSAEQAWorkerPrisonerActor()
 {
@@ -15,6 +17,21 @@ void AALSAEQAWorkerPrisonerActor::BeginPlay()
 {
     Super::BeginPlay();
     bRescued = false;
+
+    if (!bCountsAsStageOneWorker || WorkerId.IsNone() || !GetGameInstance())
+    {
+        return;
+    }
+
+    if (UALSAEQASaveManager* SaveManager = GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
+    {
+        // A previously rescued worker remains rescued after map reload.
+        bRescued = SaveManager->HasStageOneWorkerRescued(WorkerId);
+        if (bRescued)
+        {
+            InteractionPrompt = RescuedInteractionPrompt;
+        }
+    }
 }
 
 void AALSAEQAWorkerPrisonerActor::Interact_Implementation(AActor* Interactor)
@@ -24,7 +41,7 @@ void AALSAEQAWorkerPrisonerActor::Interact_Implementation(AActor* Interactor)
 
 bool AALSAEQAWorkerPrisonerActor::Rescue(AActor* Rescuer)
 {
-    if (bRescued || !bCountsAsStageOneWorker || !Rescuer)
+    if (bRescued || !bCountsAsStageOneWorker || WorkerId.IsNone() || !Rescuer)
     {
         return false;
     }
@@ -42,16 +59,32 @@ bool AALSAEQAWorkerPrisonerActor::Rescue(AActor* Rescuer)
         return false;
     }
 
-    bRescued = true;
-    InteractionPrompt = RescuedInteractionPrompt;
+    UALSAEQASaveManager* SaveManager = GetGameInstance()
+        ? GetGameInstance()->GetSubsystem<UALSAEQASaveManager>()
+        : nullptr;
+
+    if (SaveManager && SaveManager->HasStageOneWorkerRescued(WorkerId))
+    {
+        bRescued = true;
+        InteractionPrompt = RescuedInteractionPrompt;
+        return false;
+    }
+
+    // Register the stable identity first. If saving fails, the gameplay
+    // objective is not advanced, preventing a false 5/5 state.
+    if (SaveManager && !SaveManager->RecordStageOneWorkerRescued(WorkerId))
+    {
+        return false;
+    }
 
     const bool bProgressRegistered = Objectives->RegisterProgress(TEXT("RescueWorkers"), 1);
     if (!bProgressRegistered)
     {
-        bRescued = false;
-        InteractionPrompt = NSLOCTEXT("ALSAEQA", "WorkerRescuePrompt", "إنقاذ العامل");
         return false;
     }
+
+    bRescued = true;
+    InteractionPrompt = RescuedInteractionPrompt;
 
     PlayRescuePresentation(RescueMethod, RescueSequenceTag);
 
