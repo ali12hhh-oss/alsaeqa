@@ -13,6 +13,7 @@ class UALSAEQALegacyComponent;
 class UALSAEQARidingComponent;
 class UALSAEQAVisualAssetComponent;
 class UALSAEQACinematicDirector;
+class UALSAEQAStageFlowComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class AALSAEQAMountActor;
@@ -46,6 +47,7 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Legacy") UALSAEQALegacyComponent* GetLegacyComponent() const { return LegacyComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Visual") UALSAEQAVisualAssetComponent* GetVisualAssetComponent() const { return VisualAssetComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Cinematics") UALSAEQACinematicDirector* GetCinematicDirector() const { return CinematicDirector; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression|Flow") UALSAEQAStageFlowComponent* GetStageFlowComponent() const { return StageFlowComponent; }
 
 protected:
     virtual void BeginPlay() override;
@@ -79,6 +81,7 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQARidingComponent> RidingComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAVisualAssetComponent> VisualAssetComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQACinematicDirector> CinematicDirector;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAStageFlowComponent> StageFlowComponent;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float WalkSpeed = 360.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float SprintSpeed = 620.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Riding") float MountSearchRadius = 450.0f;
