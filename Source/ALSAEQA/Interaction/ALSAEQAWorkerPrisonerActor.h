@@ -4,6 +4,8 @@
 #include "Interaction/ALSAEQAInteractable.h"
 #include "ALSAEQAWorkerPrisonerActor.generated.h"
 
+class AALSAEQAWorkerPrisonerActor;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAWorkerRescuedSignature, AALSAEQAWorkerPrisonerActor*, Worker);
 
 /**
