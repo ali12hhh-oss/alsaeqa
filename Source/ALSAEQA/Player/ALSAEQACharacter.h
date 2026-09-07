@@ -16,6 +16,7 @@ class UALSAEQACinematicDirector;
 class UALSAEQAProgressionComponent;
 class UALSAEQAStageFlowComponent;
 class UALSAEQAStageObjectiveComponent;
+class UALSAEQAStage1MineResponseCoordinator;
 class USpringArmComponent;
 class UCameraComponent;
 class AALSAEQAMountActor;
@@ -62,6 +63,7 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression") UALSAEQAProgressionComponent* GetProgressionComponent() const { return ProgressionComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression|Flow") UALSAEQAStageFlowComponent* GetStageFlowComponent() const { return StageFlowComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression|Objectives") UALSAEQAStageObjectiveComponent* GetStageObjectiveComponent() const { return StageObjectiveComponent; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Stage1") UALSAEQAStage1MineResponseCoordinator* GetStage1MineResponseCoordinator() const { return Stage1MineResponseCoordinator; }
 
 protected:
     virtual void BeginPlay() override;
@@ -100,6 +102,7 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAProgressionComponent> ProgressionComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAStageFlowComponent> StageFlowComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAStageObjectiveComponent> StageObjectiveComponent;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAStage1MineResponseCoordinator> Stage1MineResponseCoordinator;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float WalkSpeed = 360.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float SprintSpeed = 620.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float CrouchSpeed = 180.0f;
