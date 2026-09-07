@@ -63,26 +63,60 @@ void UALSAEQAHealthComponent::ApplyInjuryFromDamage(const FALSAEQADamageInfo& Da
     if (!InjuryComponent || !GetOwner()) return;
 
     const float Severity = FMath::Clamp(DamageInfo.Amount / FMath::Max(MaxHealth, 1.0f) * 2.0f, 0.05f, 1.0f);
-    const FVector LocalHit = GetOwner()->GetActorTransform().InverseTransformPosition(DamageInfo.HitLocation);
-    const float Height = FMath::Max(GetOwner()->GetComponentsBoundingBox(true).Extent.Z, 1.0f);
-    const float NormalizedHeight = LocalHit.Z / Height;
-    const float Lateral = FMath::Abs(LocalHit.Y);
-
     EALSAEQAInjuryBodyPart Part = EALSAEQAInjuryBodyPart::Torso;
-    if (NormalizedHeight > 0.68f)
+
+    switch (DamageInfo.HitRegion)
     {
-        Part = EALSAEQAInjuryBodyPart::Head;
-    }
-    else if (NormalizedHeight < -0.35f)
-    {
-        Part = LocalHit.Y >= 0.0f ? EALSAEQAInjuryBodyPart::RightLeg : EALSAEQAInjuryBodyPart::LeftLeg;
-    }
-    else if (Lateral > Height * 0.55f)
-    {
-        Part = LocalHit.Y >= 0.0f ? EALSAEQAInjuryBodyPart::RightArm : EALSAEQAInjuryBodyPart::LeftArm;
+        case EALSAEQADamageHitRegion::Head: Part = EALSAEQAInjuryBodyPart::Head; break;
+        case EALSAEQADamageHitRegion::Torso: Part = EALSAEQAInjuryBodyPart::Torso; break;
+        case EALSAEQADamageHitRegion::LeftArm: Part = EALSAEQAInjuryBodyPart::LeftArm; break;
+        case EALSAEQADamageHitRegion::RightArm: Part = EALSAEQAInjuryBodyPart::RightArm; break;
+        case EALSAEQADamageHitRegion::LeftLeg: Part = EALSAEQAInjuryBodyPart::LeftLeg; break;
+        case EALSAEQADamageHitRegion::RightLeg: Part = EALSAEQAInjuryBodyPart::RightLeg; break;
+        case EALSAEQADamageHitRegion::Auto:
+        default:
+        {
+            const FVector LocalHit = GetOwner()->GetActorTransform().InverseTransformPosition(DamageInfo.HitLocation);
+            const float Height = FMath::Max(GetOwner()->GetComponentsBoundingBox(true).Extent.Z, 1.0f);
+            const float NormalizedHeight = LocalHit.Z / Height;
+            const float Lateral = FMath::Abs(LocalHit.Y);
+            if (NormalizedHeight > 0.68f)
+            {
+                Part = EALSAEQAInjuryBodyPart::Head;
+            }
+            else if (NormalizedHeight < -0.35f)
+            {
+                Part = LocalHit.Y >= 0.0f ? EALSAEQAInjuryBodyPart::RightLeg : EALSAEQAInjuryBodyPart::LeftLeg;
+            }
+            else if (Lateral > Height * 0.55f)
+            {
+                Part = LocalHit.Y >= 0.0f ? EALSAEQAInjuryBodyPart::RightArm : EALSAEQAInjuryBodyPart::LeftArm;
+            }
+            break;
+        }
     }
 
     InjuryComponent->ApplyBodyPartInjury(Part, Severity);
+
+    if (DamageInfo.bDismemberment &&
+        (Part == EALSAEQAInjuryBodyPart::LeftArm || Part == EALSAEQAInjuryBodyPart::RightArm ||
+         Part == EALSAEQAInjuryBodyPart::LeftLeg || Part == EALSAEQAInjuryBodyPart::RightLeg))
+    {
+        InjuryComponent->SetLimbSevered(Part);
+    }
+
+    if (DamageInfo.bKnockout || DamageInfo.bCritical || Severity >= 0.90f)
+    {
+        if (DamageInfo.bKnockout || Severity >= 0.90f)
+        {
+            InjuryComponent->SetKnockedOut();
+        }
+    }
+
+    if (Part == EALSAEQAInjuryBodyPart::Head && (DamageInfo.bCritical || Severity >= 0.75f))
+    {
+        InjuryComponent->ApplyOrganInjury(EALSAEQAInjuryOrgan::None, 0.0f);
+    }
 
     if (Part == EALSAEQAInjuryBodyPart::Torso && DamageInfo.Amount >= 35.0f)
     {
