@@ -1,6 +1,7 @@
 #include "Systems/ALSAEQAInjuryComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
 UALSAEQAInjuryComponent::UALSAEQAInjuryComponent()
@@ -14,6 +15,7 @@ void UALSAEQAInjuryComponent::ApplyBodyPartInjury(EALSAEQAInjuryBodyPart BodyPar
     const float NewSeverity = FMath::Clamp(GetBodyPartSeverity(BodyPart) + Severity, 0.0f, 1.0f);
     BodyPartSeverity.FindOrAdd(BodyPart) = NewSeverity;
     PlayInjuryPresentation(BodyPart, NewSeverity);
+    OnHitReaction.Broadcast(BodyPart);
     RecalculateState();
 }
 
@@ -45,14 +47,15 @@ void UALSAEQAInjuryComponent::SetLimbSevered(EALSAEQAInjuryBodyPart BodyPart, bo
             ApplySeveredLimbVisual(BodyPart);
             PlayDismembermentPresentation(BodyPart);
             OnLimbChanged.Broadcast(BodyPart);
+            RecalculateState();
         }
     }
     else if (SeveredLimbs.Remove(BodyPart) > 0)
     {
         RestoreLimbVisual(BodyPart);
         OnLimbChanged.Broadcast(BodyPart);
+        RecalculateState();
     }
-    RecalculateState();
 }
 
 void UALSAEQAInjuryComponent::SetKnockedOut(bool bValue)
@@ -85,6 +88,7 @@ void UALSAEQAInjuryComponent::ClearTemporaryInjuries()
     BodyPartSeverity.Reset();
     OrganSeverity.Reset();
     State = SeveredLimbs.Num() > 0 ? EALSAEQAInjuryState::Injured : EALSAEQAInjuryState::Healthy;
+    ApplyOwnerStatePresentation();
     OnInjuryStateChanged.Broadcast(State, 0.0f);
 }
 
@@ -109,12 +113,19 @@ void UALSAEQAInjuryComponent::ResetAfterDeath()
         if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
         {
             Movement->SetMovementMode(MOVE_Walking);
+            Movement->SetComponentTickEnabled(true);
         }
         if (USkeletalMeshComponent* Mesh = Character->GetMesh())
         {
             Mesh->SetSimulatePhysics(false);
+            Mesh->SetCollisionProfileName(TEXT("CharacterMesh"));
             Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+            Mesh->UnHideBoneByName(LeftArmBone);
+            Mesh->UnHideBoneByName(RightArmBone);
+            Mesh->UnHideBoneByName(LeftLegBone);
+            Mesh->UnHideBoneByName(RightLegBone);
         }
+        if (UCapsuleComponent* Capsule = Character->GetCapsuleComponent()) Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     }
     OnInjuryStateChanged.Broadcast(State, 0.0f);
 }
@@ -134,6 +145,27 @@ float UALSAEQAInjuryComponent::GetOrganSeverity(EALSAEQAInjuryOrgan Organ) const
 bool UALSAEQAInjuryComponent::IsLimbSevered(EALSAEQAInjuryBodyPart BodyPart) const
 {
     return SeveredLimbs.Contains(BodyPart);
+}
+
+float UALSAEQAInjuryComponent::GetMovementSpeedMultiplier() const
+{
+    if (State == EALSAEQAInjuryState::Dead || State == EALSAEQAInjuryState::KnockedOut) return 0.0f;
+    const float LegSeverity = FMath::Max(GetBodyPartSeverity(EALSAEQAInjuryBodyPart::LeftLeg), GetBodyPartSeverity(EALSAEQAInjuryBodyPart::RightLeg));
+    float Multiplier = 1.0f - 0.65f * LegSeverity;
+    if (IsLimbSevered(EALSAEQAInjuryBodyPart::LeftLeg)) Multiplier = FMath::Min(Multiplier, 0.35f);
+    if (IsLimbSevered(EALSAEQAInjuryBodyPart::RightLeg)) Multiplier = FMath::Min(Multiplier, 0.35f);
+    if (State == EALSAEQAInjuryState::Critical) Multiplier = FMath::Min(Multiplier, 0.55f);
+    return FMath::Clamp(Multiplier, 0.0f, 1.0f);
+}
+
+float UALSAEQAInjuryComponent::GetCombatEffectivenessMultiplier() const
+{
+    if (State == EALSAEQAInjuryState::Dead || State == EALSAEQAInjuryState::KnockedOut) return 0.0f;
+    const float ArmSeverity = FMath::Max(GetBodyPartSeverity(EALSAEQAInjuryBodyPart::LeftArm), GetBodyPartSeverity(EALSAEQAInjuryBodyPart::RightArm));
+    float Multiplier = 1.0f - 0.55f * ArmSeverity;
+    if (IsLimbSevered(EALSAEQAInjuryBodyPart::LeftArm) || IsLimbSevered(EALSAEQAInjuryBodyPart::RightArm)) Multiplier = FMath::Min(Multiplier, 0.45f);
+    if (GetBodyPartSeverity(EALSAEQAInjuryBodyPart::Head) >= CriticalThreshold) Multiplier = FMath::Min(Multiplier, 0.5f);
+    return FMath::Clamp(Multiplier, 0.0f, 1.0f);
 }
 
 void UALSAEQAInjuryComponent::RecalculateState()
@@ -167,20 +199,20 @@ void UALSAEQAInjuryComponent::ApplyOwnerStatePresentation()
     if (State == EALSAEQAInjuryState::KnockedOut || State == EALSAEQAInjuryState::Dead)
     {
         Movement->StopMovementImmediately();
-        Movement->DisableMovement();
+        if (bAutoDisableMovementOnKnockout || State == EALSAEQAInjuryState::Dead) Movement->DisableMovement();
         if (State == EALSAEQAInjuryState::Dead && bAutoRagdollOnDeath)
         {
             if (USkeletalMeshComponent* Mesh = Character->GetMesh())
             {
                 Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
                 Mesh->SetSimulatePhysics(true);
-                Character->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                if (UCapsuleComponent* Capsule = Character->GetCapsuleComponent()) Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
             }
         }
     }
-    else if (State == EALSAEQAInjuryState::Critical)
+    else
     {
-        Movement->MaxWalkSpeed = FMath::Min(Movement->MaxWalkSpeed, 180.0f);
+        Movement->MaxWalkSpeed = FMath::Max(1.0f, Movement->MaxWalkSpeed * GetMovementSpeedMultiplier());
     }
 }
 
@@ -199,7 +231,7 @@ void UALSAEQAInjuryComponent::ApplySeveredLimbVisual(EALSAEQAInjuryBodyPart Body
         case EALSAEQAInjuryBodyPart::RightLeg: Bone = RightLegBone; break;
         default: break;
     }
-    if (!Bone.IsNone() && Mesh->GetBoneIndex(Bone) != INDEX_NONE) Mesh->HideBoneByName(Bone, EPhysBodyOp::PBO_None);
+    if (!Bone.IsNone() && Mesh->GetBoneIndex(Bone) != INDEX_NONE) Mesh->HideBoneByName(Bone, EPhysBodyOp::PBO_Term);
 }
 
 void UALSAEQAInjuryComponent::RestoreLimbVisual(EALSAEQAInjuryBodyPart BodyPart)
@@ -212,7 +244,7 @@ void UALSAEQAInjuryComponent::RestoreLimbVisual(EALSAEQAInjuryBodyPart BodyPart)
     {
         case EALSAEQAInjuryBodyPart::LeftArm: Bone = LeftArmBone; break;
         case EALSAEQAInjuryBodyPart::RightArm: Bone = RightArmBone; break;
-        case EALSAEQAInjuryBodyPart::LeftLeg: Bone = LeftLegBone; break;
+        case EALSAEQAInjuryBodyPart::LeftLeg: Bone = RightLegBone; break;
         case EALSAEQAInjuryBodyPart::RightLeg: Bone = RightLegBone; break;
         default: break;
     }
