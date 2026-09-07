@@ -1,77 +1,59 @@
 # ALSAEQA — Project Continuity / Canonical State
 
-This is the persistent handoff record for continuing ALSAEQA across chat sessions.
+Canonical repository: ali12hhh-oss/alsaeqa
+Project: الصاعقة / ALSAEQA
+Engine: Unreal Engine 5
+Primary target: Android
+Architecture: C++ gameplay foundation + Blueprint/Sequencer authored presentation.
+Rule: one continuous project; no V1/V2/V3 forks; no primitive placeholders as final art.
 
-## Canonical repository
-- `ali12hhh-oss/alsaeqa`
-- Project: **الصاعقة / ALSAEQA**
-- Unreal Engine 5 + C++/Blueprints
-- Primary target: Android
-- One continuous canonical project; no V1/V2/V3 forks; no primitive placeholders.
+## Stage 1 — Chains in the Mine
+Mandatory independent gates:
+- RescueWorkers = 5 distinct workers
+- DefeatSlavers = 1 designated Stage 1 slaver
 
-## Story canon
-Hero is from the Thunder Giants family/bloodline, not literal giants. The family ruled medieval realms and possessed extraordinary thunder abilities. An evil force attacked the Thunder Kingdom to control the world/resources. Hero was about 4–5; father and brother were killed, mother hid him behind a chest/box, and mother/surviving siblings were captured. Hero escaped the attackers but was later captured by a **different** group of slavers. He grew up in mine/quarry forced labor, dirty/wounded/scarred and in ragged clothing with a believable athletic/average-fit body. A mine collapse led to a deep hole, relic, body-mark reaction and inherited thunder awakening. First ability is survival/traversal-oriented. He initially does not know his lineage or true name; **الصاعقة / Alsaeqa** is the canonical name recovered gradually. Hero is 22 in the main playable era. Appearance, clothing, armor, scars, weapons and powers evolve gradually.
+Final sequence: awakening aftermath → return to mine → discover surviving workers → rescue 1 → enemy response → rescue 2 → rescue 3 → escalation → rescue 4 → rescue 5 → defeat designated slaver → first mine-network clue → automatic Stage 1→2 transition.
 
-## Opening canon
-30–45 second fragmentary cinematic: family/rule memory → attack/deaths/hiding → escape/capture → adult slavery/mine work → collapse/relic → awakening/escape. Do not dump the entire family truth in the opening.
+Five workers use distinct authored methods: Break Chain, Open Cage, Release Lift, Cut Binding, Escort Out. Each has a stable WorkerId and optional RescueSequenceTag.
+Each designated slaver has stable StageOneSlaverId. Death is authoritative and reports once.
 
-## Stage canon
-The master bible contains the complete 1–70 descriptions. High-level arc boundaries:
-- 1–10 Origin of the Heir
-- 11–20 Powers, Weapons and Wider World
-- 21–24 Preparation for Companion Family Arc
-- 25–40 Companion Family Search
-- 41–44 Hero Family Search Begins
-- 45–55 Taming and Mount Adventure
-- 56–59 ThunderBeast Awakening
-- 60–70 ThunderBeast Mastery/Endgame Routes
-
-Hard rules: connected revisitable world; automatic story-driven stage transitions; no manual next-stage selector; companion permanent from stage 5; companion family search strictly 25–40; after 40 she supports hero family search; mounts are gameplay/traversal systems; ThunderBeast abilities require correct progression/resources.
+## Stage 1 persistence — implemented
+ALSAEQASaveGame stores RescuedStageOneWorkerIds and DefeatedStageOneSlaverIds.
+ALSAEQASaveManager exposes record/query/count APIs.
+A previously rescued worker reloads as rescued and cannot count again.
+A previously defeated designated slaver reloads as dead and cannot count again.
 
 ## Current committed foundation
-- 1–70 stage types and registry.
-- Progression validation and saved-stage handling.
-- Automatic stage-flow component with delayed transition.
-- Stage objective component with progress/completion/finalization.
-- Stage 1 is a **group rescue in the mine**: five separate worker/prisoner actors are required by the default `RescueWorkers` objective; one worker alone cannot complete the stage.
-- Stage 1 default objectives: `RescueWorkers` = 5 and `DefeatSlavers` = 1.
-- Real slaver death linkage: only enemies explicitly marked `bCountsAsStageOneSlaver` report `DefeatSlavers`, and each enemy reports at most once.
-- Real worker/prisoner rescue actor: `AALSAEQAWorkerPrisonerActor`; each rescued worker reports +1 exactly once and fires the Rescue cinematic story beat.
-- Worker rescue supports five distinct authored methods: Break Chain, Open Cage, Release Lift, Cut Binding and Escort Out. Each worker also has an optional `RescueSequenceTag` so real mine assets/Blueprints can provide different presentations without changing progression logic.
-- Player `Interact` action finds the nearest forward-facing interactable within 240 units; `Config/DefaultInput.ini` maps it to `E`.
-- Automatic stage transition fires a dedicated `StageTransition` cinematic story beat after the progression/save update.
-- Cinematic director exposes `HandleStoryBeat` as a Blueprint implementation point, so rescue and transition beats can drive authored camera/Sequencer presentation rather than being data-only events.
-- Cinematic director action moments for heavy combat and high-charge thunder.
-- Hero integration with stage flow/objectives.
-- Real-asset release/import documentation and primitive-fallback prohibition.
+- 1–70 stage registry and progression validation.
+- Automatic stage flow with delayed transition.
+- Stage objective component with Stage 1 5+1 gates.
+- Worker rescue interaction and five presentation methods.
+- Stable Stage 1 worker/slaver persistence.
+- Designated slaver death linkage.
+- First Stage 1 clue unlock when both gates complete.
+- Automatic Stage 1→2 transition and cinematic hooks.
+- Forward interaction input (E).
+- Cinematic action moments and Blueprint story-beat hook.
+- Real-asset import/release documentation and primitive-fallback prohibition.
 
-## Latest implementation block
-The worker rescue actor was strengthened so each of the five mine workers can be authored as a different physical rescue scenario. The progression gate remains centralized: a worker only counts after a valid Stage 1 hero interaction, and the actor is locked before reporting progress so duplicate interactions cannot inflate the 5-worker requirement. The Blueprint presentation hook is intentionally separate from the progression result so real cage/chain/lift/worker assets can be wired later without changing the gameplay contract.
+## Stage 1 production layer still requiring Unreal asset authoring
+The remaining work that cannot be honestly completed through source-only repository edits is placement and wiring inside the actual Unreal level: five distributed worker locations, real cages/chains/lift/bindings, rescue animations, camera/Sequencer shots, VFX/audio, and coordinated enemy encounter choreography. These require the real binary .uasset/.umap content and an Unreal build/editor environment.
 
-## Engineering queue
-1. Turn the five-worker rescue into a fully authored mine sequence: distributed worker locations, cages/chains, varied rescue interactions and a coordinated enemy response.
-2. Data-drive later stage objectives.
-3. Animation-notify-driven melee hit windows.
-4. Real climb/ledge traversal and animation/IK fall rescue.
-5. Wind reactions for foliage/cloth/hair/sand.
-6. Complete ThunderBeast Crossing, Sense and correct Storm Charge semantics.
-7. Complete companion AI/combat/rescue/persistence.
-8. Dialogue/quest/event orchestration and Sequencer story events.
-9. Save persistence for story, companion, rescue, discoveries and mounts.
-10. Import/match real final assets; never replace with primitives.
-11. Android optimization/package/build verification when UE 5.8 build hardware exists.
-
-## Stage 1 runtime chain
-Five distinct `WorkerPrisoner` actors → each `Interact/Rescue` → `StageObjective.RegisterProgress("RescueWorkers", 1)` → progress 1/5 … 5/5.
-
-`Player.Interact (E)` → nearest `AALSAEQAInteractable` in front of hero → worker rescue.
-
-`Slaver.HandleDeath` (only `bCountsAsStageOneSlaver=true`) → `StageObjective.RegisterProgress("DefeatSlavers")`.
-
-When both objectives are complete → `StageObjective.FinalizeStageIfReady` → `StageFlow.CompleteCurrentStage` → delayed automatic 1→2 progression → save stage 2 → dedicated `StageTransition` cinematic event → Blueprint `HandleStoryBeat(StageTransition)` → `OnAutomaticStageChanged`.
+## Next engineering queue
+1. Stage 1 enemy escalation/encounter orchestration.
+2. Data-drive later-stage objectives.
+3. Animation-notify melee hit windows.
+4. Real climbing/ledge traversal and IK fall rescue.
+5. Wind/environment reactions.
+6. Complete ThunderBeast Crossing/Sense/Storm Charge.
+7. Companion AI/combat/rescue/persistence.
+8. Dialogue/quest/event orchestration and Sequencer.
+9. Broader save persistence for story/world/mount states.
+10. Real asset mapping/import.
+11. Android optimization and actual UE build verification.
 
 ## Continuity protocol
-At the beginning of a new chat: read this file, `Docs/ALSAEQA_MASTER_PROJECT_BIBLE.md`, `Docs/DEVELOPMENT_RULES.md`, the original stage roadmap, and latest relevant commits/files. Continue from the existing canonical state. Do not recreate completed systems. After every meaningful implementation block, update this file and commit.
+At every new chat: read this file, Docs/ALSAEQA_MASTER_PROJECT_BIBLE.md, Docs/DEVELOPMENT_RULES.md, inspect latest relevant commits/files, continue from the highest unfinished item, and never recreate completed systems. After meaningful implementation, update this file.
 
 ## Quality gate
-A feature is not done merely because a class/document exists. It must be connected to the runtime path, safe under lifecycle/failure conditions, considered for persistence and Android scalability, and documented. Never claim UE build success without an actual build result.
+No feature is done because a class or document exists. Runtime connection, failure safety, persistence implications, Android scalability and Blueprint/asset integration must be considered. Never claim a UE build succeeded without an actual build result.
