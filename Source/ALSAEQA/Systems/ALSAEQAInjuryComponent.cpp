@@ -110,11 +110,7 @@ void UALSAEQAInjuryComponent::ResetAfterDeath()
     State = EALSAEQAInjuryState::Healthy;
     if (ACharacter* Character = Cast<ACharacter>(GetOwner()))
     {
-        if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
-        {
-            Movement->SetMovementMode(MOVE_Walking);
-            Movement->SetComponentTickEnabled(true);
-        }
+        if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement()) Movement->SetMovementMode(MOVE_Walking);
         if (USkeletalMeshComponent* Mesh = Character->GetMesh())
         {
             Mesh->SetSimulatePhysics(false);
@@ -152,8 +148,7 @@ float UALSAEQAInjuryComponent::GetMovementSpeedMultiplier() const
     if (State == EALSAEQAInjuryState::Dead || State == EALSAEQAInjuryState::KnockedOut) return 0.0f;
     const float LegSeverity = FMath::Max(GetBodyPartSeverity(EALSAEQAInjuryBodyPart::LeftLeg), GetBodyPartSeverity(EALSAEQAInjuryBodyPart::RightLeg));
     float Multiplier = 1.0f - 0.65f * LegSeverity;
-    if (IsLimbSevered(EALSAEQAInjuryBodyPart::LeftLeg)) Multiplier = FMath::Min(Multiplier, 0.35f);
-    if (IsLimbSevered(EALSAEQAInjuryBodyPart::RightLeg)) Multiplier = FMath::Min(Multiplier, 0.35f);
+    if (IsLimbSevered(EALSAEQAInjuryBodyPart::LeftLeg) || IsLimbSevered(EALSAEQAInjuryBodyPart::RightLeg)) Multiplier = FMath::Min(Multiplier, 0.35f);
     if (State == EALSAEQAInjuryState::Critical) Multiplier = FMath::Min(Multiplier, 0.55f);
     return FMath::Clamp(Multiplier, 0.0f, 1.0f);
 }
@@ -210,10 +205,6 @@ void UALSAEQAInjuryComponent::ApplyOwnerStatePresentation()
             }
         }
     }
-    else
-    {
-        Movement->MaxWalkSpeed = FMath::Max(1.0f, Movement->MaxWalkSpeed * GetMovementSpeedMultiplier());
-    }
 }
 
 void UALSAEQAInjuryComponent::ApplySeveredLimbVisual(EALSAEQAInjuryBodyPart BodyPart)
@@ -244,7 +235,7 @@ void UALSAEQAInjuryComponent::RestoreLimbVisual(EALSAEQAInjuryBodyPart BodyPart)
     {
         case EALSAEQAInjuryBodyPart::LeftArm: Bone = LeftArmBone; break;
         case EALSAEQAInjuryBodyPart::RightArm: Bone = RightArmBone; break;
-        case EALSAEQAInjuryBodyPart::LeftLeg: Bone = RightLegBone; break;
+        case EALSAEQAInjuryBodyPart::LeftLeg: Bone = LeftLegBone; break;
         case EALSAEQAInjuryBodyPart::RightLeg: Bone = RightLegBone; break;
         default: break;
     }
