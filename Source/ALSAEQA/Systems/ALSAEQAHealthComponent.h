@@ -4,6 +4,8 @@
 #include "Components/ActorComponent.h"
 #include "ALSAEQAHealthComponent.generated.h"
 
+class UALSAEQAInjuryComponent;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FALSAEQAHealthChanged, float, CurrentHealth, float, MaxHealth);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FALSAEQADeath);
 
@@ -30,6 +32,9 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Health")
     float GetHealthPercent() const;
 
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury")
+    UALSAEQAInjuryComponent* GetInjuryComponent() const { return InjuryComponent; }
+
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Health")
     FALSAEQAHealthChanged OnHealthChanged;
 
@@ -37,6 +42,8 @@ public:
     FALSAEQADeath OnDeath;
 
 protected:
+    virtual void BeginPlay() override;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Health")
     float MaxHealth = 100.0f;
 
@@ -45,4 +52,11 @@ protected:
 
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Health")
     bool bDead = false;
+
+    UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Injury")
+    TObjectPtr<UALSAEQAInjuryComponent> InjuryComponent;
+
+private:
+    UFUNCTION()
+    void HandleInjuryDeath();
 };
