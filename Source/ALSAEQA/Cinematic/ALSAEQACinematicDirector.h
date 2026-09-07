@@ -48,6 +48,11 @@ protected:
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Cinematics")
     void HandleOpeningCinematic();
 
+    // Blueprint/Sequencer implementation point for authored story shots such
+    // as rescue beats and the automatic Stage 1 -> Stage 2 transition.
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Cinematics")
+    void HandleStoryBeat(EALSAEQACinematicEvent Event);
+
 private:
     FTimerHandle RestoreTimeHandle;
     float PreviousTimeDilation = 1.0f;
