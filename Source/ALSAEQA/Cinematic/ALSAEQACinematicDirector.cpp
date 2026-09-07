@@ -51,7 +51,7 @@ bool UALSAEQACinematicDirector::StartOpeningCinematic()
     return true;
 }
 
-void UALSAEQACharacter::FinishOpeningCinematic()
+void UALSAEQACinematicDirector::FinishOpeningCinematic()
 {
     OnCinematicEvent.Broadcast(EALSAEQACinematicEvent::Opening);
 }
