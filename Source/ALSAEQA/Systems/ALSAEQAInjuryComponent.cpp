@@ -21,6 +21,15 @@ void UALSAEQAInjuryComponent::ApplyOrganInjury(EALSAEQAInjuryOrgan Organ, float 
     OrganSeverity.FindOrAdd(Organ) = NewSeverity;
     PlayOrganInjuryPresentation(Organ, NewSeverity);
     OnOrganInjured.Broadcast(Organ);
+
+    // Certain vital-organ injuries are fatal. The visual/gameplay presentation remains
+    // Blueprint-driven so humanoids, creatures and bosses can each respond appropriately.
+    if ((Organ == EALSAEQAInjuryOrgan::Heart || Organ == EALSAEQAInjuryOrgan::Lungs) && NewSeverity >= 1.0f)
+    {
+        MarkDead();
+        return;
+    }
+
     RecalculateState();
 }
 
