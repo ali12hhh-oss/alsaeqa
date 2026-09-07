@@ -14,6 +14,7 @@ enum class EALSAEQAInjuryState : uint8 { Healthy, Injured, Critical, KnockedOut,
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FALSAEQAInjuryStateChanged, EALSAEQAInjuryState, State, float, Severity);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAOrganInjured, EALSAEQAInjuryOrgan, Organ);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQALimbChanged, EALSAEQAInjuryBodyPart, BodyPart);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAInjuryHitReaction, EALSAEQAInjuryBodyPart, BodyPart);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FALSAEQAInjuryFatalState);
 
 UCLASS(ClassGroup=(ALSAEQA), meta=(BlueprintSpawnableComponent))
@@ -34,17 +35,21 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury") float GetBodyPartSeverity(EALSAEQAInjuryBodyPart BodyPart) const;
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury") float GetOrganSeverity(EALSAEQAInjuryOrgan Organ) const;
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury") bool IsLimbSevered(EALSAEQAInjuryBodyPart BodyPart) const;
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury") int32 GetSeveredLimbCount() const { return SeveredLimbs.Num(); }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury") float GetMovementSpeedMultiplier() const;
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury") float GetCombatEffectivenessMultiplier() const;
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury") bool IsKnockedOut() const { return State == EALSAEQAInjuryState::KnockedOut; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury") bool IsCritical() const { return State == EALSAEQAInjuryState::Critical; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Injury") bool IsDead() const { return State == EALSAEQAInjuryState::Dead; }
-    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury") void PlayInjuryPresentation(EALSAEQAInjuryBodyPart BodyPart, float Severity);
-    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury") void PlayDismembermentPresentation(EALSAEQAInjuryBodyPart BodyPart);
-    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury") void PlayKnockoutPresentation(bool bStarted);
-    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury") void PlayOrganInjuryPresentation(EALSAEQAInjuryOrgan Organ, float Severity);
-    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury") void PlayDeathPresentation();
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury|Visual") void PlayInjuryPresentation(EALSAEQAInjuryBodyPart BodyPart, float Severity);
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury|Visual") void PlayDismembermentPresentation(EALSAEQAInjuryBodyPart BodyPart);
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury|Visual") void PlayKnockoutPresentation(bool bStarted);
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury|Visual") void PlayOrganInjuryPresentation(EALSAEQAInjuryOrgan Organ, float Severity);
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Injury|Visual") void PlayDeathPresentation();
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Injury") FALSAEQAInjuryStateChanged OnInjuryStateChanged;
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Injury") FALSAEQAOrganInjured OnOrganInjured;
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Injury") FALSAEQALimbChanged OnLimbChanged;
+    UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Injury") FALSAEQAInjuryHitReaction OnHitReaction;
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Injury") FALSAEQAInjuryFatalState OnFatalState;
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury") float KnockoutThreshold = 0.90f;
