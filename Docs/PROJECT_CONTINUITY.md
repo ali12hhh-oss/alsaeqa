@@ -42,7 +42,9 @@ Hard rules: connected revisitable world; automatic story-driven stage transition
 - Stage 1 default objectives: `RescueWorkers` = 1 and `DefeatSlavers` = 1.
 - Real slaver death linkage: only enemies explicitly marked `bCountsAsStageOneSlaver` report `DefeatSlavers`, and each enemy reports at most once.
 - Real worker/prisoner rescue actor: `AALSAEQAWorkerPrisonerActor`; stage-1 rescues report `RescueWorkers` once per worker and fire the Rescue cinematic story beat.
+- Player `Interact` action now finds the nearest forward-facing interactable within 240 units; `Config/DefaultInput.ini` maps it to `E`.
 - Automatic stage transition now fires a dedicated `StageTransition` cinematic story beat after the progression/save update.
+- Cinematic director exposes `HandleStoryBeat` as a Blueprint implementation point, so the transition/rescue beats can drive authored camera/Sequencer presentation rather than being data-only events.
 - Cinematic director action moments for heavy combat and high-charge thunder.
 - Hero integration with stage flow/objectives.
 - Real-asset release/import documentation and primitive-fallback prohibition.
@@ -63,9 +65,11 @@ Hard rules: connected revisitable world; automatic story-driven stage transition
 ## Stage 1 runtime chain
 `WorkerPrisoner.Interact/Rescue` → `StageObjective.RegisterProgress("RescueWorkers")` + Rescue cinematic event.
 
+`Player.Interact (E)` → nearest `AALSAEQAInteractable` in front of hero → worker rescue.
+
 `Slaver.HandleDeath` (only `bCountsAsStageOneSlaver=true`) → `StageObjective.RegisterProgress("DefeatSlavers")`.
 
-When both objectives are complete → `StageObjective.FinalizeStageIfReady` → `StageFlow.CompleteCurrentStage` → delayed automatic 1→2 progression → save stage 2 → dedicated `StageTransition` cinematic event → `OnAutomaticStageChanged`.
+When both objectives are complete → `StageObjective.FinalizeStageIfReady` → `StageFlow.CompleteCurrentStage` → delayed automatic 1→2 progression → save stage 2 → dedicated `StageTransition` cinematic event → Blueprint `HandleStoryBeat(StageTransition)` → `OnAutomaticStageChanged`.
 
 ## Continuity protocol
 At the beginning of a new chat: read this file, `Docs/ALSAEQA_MASTER_PROJECT_BIBLE.md`, `Docs/DEVELOPMENT_RULES.md`, the original stage roadmap, and latest relevant commits/files. Continue from the existing canonical state. Do not recreate completed systems. After every meaningful implementation block, update this file and commit.
