@@ -13,6 +13,7 @@
 #include "Cinematic/ALSAEQACinematicDirector.h"
 #include "Progression/ALSAEQAStageFlowComponent.h"
 #include "Progression/ALSAEQAStageObjectiveComponent.h"
+#include "Interaction/ALSAEQAInteractable.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -76,6 +77,7 @@ void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
     PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Pressed, this, &AALSAEQACharacter::StartSprint);
     PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Released, this, &AALSAEQACharacter::StopSprint);
     PlayerInputComponent->BindAction(TEXT("Mount"), IE_Pressed, this, &AALSAEQACharacter::HandleMountInput);
+    PlayerInputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AALSAEQACharacter::InteractWithNearest);
     PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Pressed, this, &AALSAEQACharacter::BeginThunderCharge);
     PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Released, this, &AALSAEQACharacter::ReleaseThunderCharge);
     PlayerInputComponent->BindAction(TEXT("MountLightningDash"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningDash);
@@ -93,6 +95,36 @@ void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 void AALSAEQACharacter::HandleMountInput()
 {
     MountOrDismount();
+}
+
+bool AALSAEQACharacter::InteractWithNearest()
+{
+    if (bDeathInProgress || !GetWorld()) return false;
+
+    AALSAEQAInteractable* BestInteractable = nullptr;
+    float BestDistanceSquared = FMath::Square(InteractionRange);
+    const FVector HeroLocation = GetActorLocation();
+    const FVector Forward = GetActorForwardVector();
+
+    for (TActorIterator<AALSAEQAInteractable> It(GetWorld()); It; ++It)
+    {
+        AALSAEQAInteractable* Candidate = *It;
+        if (!IsValid(Candidate)) continue;
+
+        const FVector ToCandidate = Candidate->GetActorLocation() - HeroLocation;
+        const float DistanceSquared = ToCandidate.SizeSquared();
+        if (DistanceSquared > BestDistanceSquared || DistanceSquared <= KINDA_SMALL_NUMBER) continue;
+
+        const FVector Direction = ToCandidate.GetSafeNormal();
+        if (FVector::DotProduct(Forward, Direction) < 0.25f) continue;
+
+        BestDistanceSquared = DistanceSquared;
+        BestInteractable = Candidate;
+    }
+
+    if (!BestInteractable) return false;
+    BestInteractable->Interact(this);
+    return true;
 }
 
 void AALSAEQACharacter::MoveForward(float Value)
