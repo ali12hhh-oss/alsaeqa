@@ -29,8 +29,8 @@ enum class EALSAEQAInjuryState : uint8
 {
     Healthy,
     Injured,
-    KnockedOut,
     Critical,
+    KnockedOut,
     Dead
 };
 
@@ -78,6 +78,14 @@ public:
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury") float KnockoutThreshold = 0.90f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury") float CriticalThreshold = 0.75f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury|Visual") bool bAutoHideSeveredLimbBones = true;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury|Visual") bool bAutoDisableMovementOnKnockout = true;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury|Visual") bool bAutoRagdollOnDeath = false;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury|Visual") FName LeftArmBone = TEXT("upperarm_l");
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury|Visual") FName RightArmBone = TEXT("upperarm_r");
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury|Visual") FName LeftLegBone = TEXT("thigh_l");
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury|Visual") FName RightLegBone = TEXT("thigh_r");
 
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Injury") TMap<EALSAEQAInjuryBodyPart, float> BodyPartSeverity;
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Injury") TMap<EALSAEQAInjuryOrgan, float> OrganSeverity;
@@ -86,4 +94,7 @@ protected:
 
 private:
     void RecalculateState();
+    void ApplyOwnerStatePresentation();
+    void ApplySeveredLimbVisual(EALSAEQAInjuryBodyPart BodyPart);
+    void RestoreLimbVisual(EALSAEQAInjuryBodyPart BodyPart);
 };
