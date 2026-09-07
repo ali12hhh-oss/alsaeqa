@@ -18,10 +18,7 @@ void UALSAEQAHealthComponent::BeginPlay()
     if (!InjuryComponent)
     {
         InjuryComponent = NewObject<UALSAEQAInjuryComponent>(Owner, TEXT("UniversalInjuryComponent"));
-        if (InjuryComponent)
-        {
-            InjuryComponent->RegisterComponent();
-        }
+        if (InjuryComponent) InjuryComponent->RegisterComponent();
     }
 
     if (InjuryComponent)
@@ -32,29 +29,25 @@ void UALSAEQAHealthComponent::BeginPlay()
 
 void UALSAEQAHealthComponent::ApplyDamage(float Damage)
 {
-    if (bDead || Damage <= 0.0f)
-    {
-        return;
-    }
+    if (bDead || Damage <= 0.0f) return;
 
     Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
     OnHealthChanged.Broadcast(Health, MaxHealth);
 
     if (Health <= 0.0f)
     {
-        bDead = true;
         if (InjuryComponent) InjuryComponent->MarkDead();
-        OnDeath.Broadcast();
+        if (!bDead)
+        {
+            bDead = true;
+            OnDeath.Broadcast();
+        }
     }
 }
 
 void UALSAEQAHealthComponent::Heal(float Amount)
 {
-    if (bDead || Amount <= 0.0f)
-    {
-        return;
-    }
-
+    if (bDead || Amount <= 0.0f) return;
     Health = FMath::Clamp(Health + Amount, 0.0f, MaxHealth);
     OnHealthChanged.Broadcast(Health, MaxHealth);
 }
