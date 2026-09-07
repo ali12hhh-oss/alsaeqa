@@ -59,6 +59,7 @@ protected:
     void MoveRight(float Value);
     void LookUp(float Value);
     void Turn(float Value);
+    void HandleMountInput();
     void ActivateMountLightningDash();
     void ActivateMountThunderRoar();
     void ActivateMountLightningKick();
