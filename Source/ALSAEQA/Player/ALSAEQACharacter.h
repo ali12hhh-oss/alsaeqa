@@ -30,6 +30,15 @@ public:
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Combat") void PerformLightAttack();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Combat") void PerformHeavyAttack();
+
+    /** Called by the attack animation at the authored damage frame/notify window. */
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Combat|Animation")
+    bool NotifyMeleeHitWindow();
+
+    /** Called by the attack animation when the current attack montage/action ends. */
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Combat|Animation")
+    void NotifyMeleeAttackFinished();
+
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Thunder") void BeginThunderCharge();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Thunder") void ReleaseThunderCharge();
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Thunder") void CancelThunderCharge();
@@ -96,6 +105,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Riding") float MountSearchRadius = 450.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float MeleeAttackRange = 180.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float MeleeAttackRadius = 90.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat|Animation") bool bRequireMeleeAnimationNotify = false;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder") float ThunderReleaseDamage = 30.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder") float ThunderAttackRange = 650.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Thunder") float ThunderAttackRadius = 90.0f;
@@ -104,7 +114,11 @@ protected:
 private:
     int32 ApplyThunderReleaseToTargets(float Damage);
     bool PerformMeleeStrike(bool bHeavy);
+    bool ResolvePendingMeleeHit();
 
     FTimerHandle RespawnTimerHandle;
     bool bDeathInProgress = false;
+    bool bMeleeAttackPending = false;
+    bool bPendingMeleeHeavy = false;
+    bool bMeleeHitResolved = false;
 };
