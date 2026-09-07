@@ -42,8 +42,6 @@ bool AALSAEQAWorkerPrisonerActor::Rescue(AActor* Rescuer)
         return false;
     }
 
-    // Lock the rescue before reporting progress: even if a Blueprint event
-    // immediately causes another interaction, this worker can only count once.
     bRescued = true;
     InteractionPrompt = RescuedInteractionPrompt;
 
@@ -55,8 +53,6 @@ bool AALSAEQAWorkerPrisonerActor::Rescue(AActor* Rescuer)
         return false;
     }
 
-    // The progression event is shared, while the presentation is intentionally
-    // different for each worker (chain/cage/lift/binding/escort).
     PlayRescuePresentation(RescueMethod, RescueSequenceTag);
 
     if (UALSAEQACinematicDirector* Cinematic = Hero->GetCinematicDirector())
