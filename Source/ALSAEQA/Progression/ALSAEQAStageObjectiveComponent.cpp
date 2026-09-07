@@ -30,9 +30,6 @@ void UALSAEQAStageObjectiveComponent::BeginPlay()
 
     ResetObjectives();
 
-    // Rehydrate the mandatory Stage 1 gates from the persistent identities.
-    // This prevents a map reload from resetting a previously rescued worker
-    // or defeated slaver back to 0/5 and 0/1.
     if (StageNumber == 1 && GetOwner() && GetOwner()->GetGameInstance())
     {
         if (UALSAEQASaveManager* SaveManager = GetOwner()->GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
@@ -42,7 +39,6 @@ void UALSAEQAStageObjectiveComponent::BeginPlay()
                 ObjectiveProgress.FindOrAdd(TEXT("RescueWorkers")) = FMath::Clamp(
                     SaveManager->GetStageOneWorkersRescuedCount(), 0, ObjectiveRequirements.FindChecked(TEXT("RescueWorkers")));
             }
-
             if (ObjectiveRequirements.Contains(TEXT("DefeatSlavers")))
             {
                 ObjectiveProgress.FindOrAdd(TEXT("DefeatSlavers")) = FMath::Clamp(
@@ -51,8 +47,6 @@ void UALSAEQAStageObjectiveComponent::BeginPlay()
         }
     }
 
-    // If the player had already satisfied both gates immediately before a
-    // reload, resume the pending automatic transition instead of deadlocking.
     FinalizeStageIfReady();
 }
 
@@ -127,12 +121,24 @@ bool UALSAEQAStageObjectiveComponent::FinalizeStageIfReady()
 {
     if (!StageFlow || !AreAllObjectivesComplete()) return false;
 
+    // Persist the first clue in the canonical save before moving to Stage 2.
+    // It is a narrative reward, never a third completion gate.
     if (AActor* Owner = GetOwner())
     {
         if (UALSAEQALegacyComponent* Legacy = Owner->FindComponentByClass<UALSAEQALegacyComponent>())
         {
             Legacy->AddFamilyClue(TEXT("Stage1_MineNetwork"));
             Legacy->SetLegacyFlag(TEXT("Stage1_FirstClueFound"), true);
+        }
+
+        if (UGameInstance* GameInstance = Owner->GetGameInstance())
+        {
+            if (UALSAEQASaveManager* SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>())
+            {
+                SaveManager->AddFamilyClue(TEXT("Stage1_MineNetwork"));
+                SaveManager->RegisterWorldFlag(TEXT("Stage1_FirstClueFound"));
+                SaveManager->SaveProgress();
+            }
         }
     }
 
