@@ -21,6 +21,7 @@ void AALSAEQAWorkerPrisonerActor::BeginPlay()
     bRescued = false;
     bRescueInProgress = false;
     RescueState = EALSAEQAWorkerRescueState::Captive;
+    GuardPressurePauseRemaining = 0.0f;
 
     if (!bCountsAsStageOneWorker || WorkerId.IsNone() || !GetGameInstance()) return;
 
@@ -38,6 +39,8 @@ void AALSAEQAWorkerPrisonerActor::BeginPlay()
 void AALSAEQAWorkerPrisonerActor::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+
+    GuardPressurePauseRemaining = FMath::Max(0.0f, GuardPressurePauseRemaining - DeltaSeconds);
 
     if (bRescueInProgress && IsRescueThreatening())
     {
@@ -64,6 +67,7 @@ void AALSAEQAWorkerPrisonerActor::SetSafePoint(FVector NewSafePoint)
 void AALSAEQAWorkerPrisonerActor::NotifyGuardPressure(AActor* Guard)
 {
     if (bRescued || RescueState != EALSAEQAWorkerRescueState::Escaping || !IsValid(Guard)) return;
+    GuardPressurePauseRemaining = FMath::Max(GuardPressurePauseRemaining, GuardPressurePause);
     PlayWorkerGuardPressurePresentation(Guard);
 }
 
@@ -154,7 +158,7 @@ void AALSAEQAWorkerPrisonerActor::BeginEscape()
 
 void AALSAEQAWorkerPrisonerActor::UpdateEscape(float DeltaSeconds)
 {
-    if (bRescued || !GetWorld()) return;
+    if (bRescued || !GetWorld() || GuardPressurePauseRemaining > 0.0f) return;
 
     const FVector Current = GetActorLocation();
     FVector ToSafe = SafePoint - Current;
