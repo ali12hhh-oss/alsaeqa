@@ -29,7 +29,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAWorkerRescuedSignature, AALS
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAWorkerEscapeStartedSignature, AALSAEQAWorkerPrisonerActor*, Worker);
 
 UCLASS(Blueprintable)
-class ALSAEQA_API AALSAEQAWorkerPrisonerActor : public AALSAEQAInteractable
+class ALSAEQA_API AALSAEQAWorkerPrisonerActor : public ALSAEQAInteractable
 {
     GENERATED_BODY()
 
@@ -47,6 +47,7 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue") EALSAEQAWorkerRescueState GetRescueState() const { return RescueState; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue") EALSAEQAWorkerRescueMethod GetRescueMethod() const { return RescueMethod; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue") FName GetRescueSequenceTag() const { return RescueSequenceTag; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue") bool CountsAsStageOneWorker() const { return bCountsAsStageOneWorker; }
 
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue") FName WorkerId = NAME_None;
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue") bool bCountsAsStageOneWorker = true;
