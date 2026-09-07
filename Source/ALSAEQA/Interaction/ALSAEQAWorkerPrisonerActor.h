@@ -27,12 +27,16 @@ public:
     AALSAEQAWorkerPrisonerActor();
 
     virtual void Interact_Implementation(AActor* Interactor) override;
+    virtual void Tick(float DeltaSeconds) override;
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Rescue")
     bool Rescue(AActor* Rescuer);
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue")
     bool IsRescued() const { return bRescued; }
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue")
+    bool IsRescueInProgress() const { return bRescueInProgress; }
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Rescue")
     EALSAEQAWorkerRescueMethod GetRescueMethod() const { return RescueMethod; }
@@ -53,11 +57,22 @@ public:
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue")
     FName RescueSequenceTag = NAME_None;
 
+    /** Time needed to perform the physical rescue interaction. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue", meta=(ClampMin="0.25", UIMin="0.25"))
+    float RescueDuration = 1.8f;
+
+    /** Hostile proximity that makes an active rescue unsafe. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue", meta=(ClampMin="50.0", UIMin="50.0"))
+    float RescueThreatRadius = 260.0f;
+
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Rescue")
     FALSAEQAWorkerRescuedSignature OnWorkerRescued;
 
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue")
     void PlayRescuePresentation(EALSAEQAWorkerRescueMethod Method, FName SequenceTag);
+
+    UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue")
+    void PlayRescueInterruptedPresentation();
 
 protected:
     virtual void BeginPlay() override;
@@ -66,6 +81,16 @@ protected:
     FText RescuedInteractionPrompt = NSLOCTEXT("ALSAEQA", "WorkerRescuedPrompt", "تم إنقاذه");
 
 private:
+    bool IsRescueThreatening() const;
+    void FinishRescue();
+    void CancelRescue();
+
+    FTimerHandle RescueTimerHandle;
+    TWeakObjectPtr<AActor> RescueInstigator;
+
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Rescue", meta=(AllowPrivateAccess="true"))
     bool bRescued = false;
+
+    UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Rescue", meta=(AllowPrivateAccess="true"))
+    bool bRescueInProgress = false;
 };
