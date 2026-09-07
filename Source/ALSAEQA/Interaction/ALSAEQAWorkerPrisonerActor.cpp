@@ -28,7 +28,6 @@ void AALSAEQAWorkerPrisonerActor::BeginPlay()
 
     if (UALSAEQASaveManager* SaveManager = GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
     {
-        // A previously rescued worker remains rescued after map reload.
         bRescued = SaveManager->HasStageOneWorkerRescued(WorkerId);
         if (bRescued)
         {
@@ -54,11 +53,6 @@ void AALSAEQAWorkerPrisonerActor::Interact_Implementation(AActor* Interactor)
 
 bool AALSAEQAWorkerPrisonerActor::IsRescueThreatening() const
 {
-    if (!bRescueInProgress)
-    {
-        return false;
-    }
-
     UWorld* World = GetWorld();
     if (!World)
     {
@@ -118,19 +112,19 @@ bool AALSAEQAWorkerPrisonerActor::Rescue(AActor* Rescuer)
         return false;
     }
 
-    // A rescue cannot begin while an active hostile is already on top of the
-    // worker or actively targeting the rescuer. The player must create space
-    // first by fighting, stunning, repositioning, or otherwise controlling the threat.
     RescueInstigator = Hero;
+    bRescueInProgress = true;
+
+    // The threat test is now performed while the rescue is marked active,
+    // so a guard that is already close to the worker blocks the interaction.
     if (IsRescueThreatening())
     {
+        bRescueInProgress = false;
         RescueInstigator.Reset();
         return false;
     }
 
-    bRescueInProgress = true;
     InteractionPrompt = NSLOCTEXT("ALSAEQA", "WorkerRescueInProgressPrompt", "جارٍ الإنقاذ...");
-
     PlayRescuePresentation(RescueMethod, RescueSequenceTag);
 
     GetWorldTimerManager().SetTimer(
@@ -183,8 +177,6 @@ void AALSAEQAWorkerPrisonerActor::FinishRescue()
         return;
     }
 
-    // Commit the stable worker identity only after the physical rescue window
-    // completes successfully, so an interrupted interaction cannot count.
     if (SaveManager && !SaveManager->RecordStageOneWorkerRescued(WorkerId))
     {
         CancelRescue();
@@ -193,7 +185,6 @@ void AALSAEQAWorkerPrisonerActor::FinishRescue()
 
     if (!Objectives->RegisterProgress(TEXT("RescueWorkers"), 1))
     {
-        // Do not present a successful rescue if the stage system rejected it.
         CancelRescue();
         return;
     }
