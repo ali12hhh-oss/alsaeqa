@@ -37,6 +37,10 @@ try {
 $downloadRoot = Join-Path $env:RUNNER_TEMP "alsaeqa-assets-$ReleaseTag"
 if (Test-Path $downloadRoot) { Remove-Item -LiteralPath $downloadRoot -Recurse -Force }
 New-Item -ItemType Directory -Path $downloadRoot | Out-Null
+$allSourceRoots = @()
+$extractRoot = Join-Path $downloadRoot 'source'
+if (Test-Path $extractRoot) { Remove-Item -LiteralPath $itemExtractRoot -Recurse -Force }
+New-Item -ItemType Directory -Path $extractRoot | Out-Null
 
 $assetsByName = @{}
 foreach ($asset in $release.assets) { $assetsByName[$asset.name] = $asset }
@@ -60,11 +64,11 @@ foreach ($item in $manifest.assets) {
     if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Recurse -Force }
     New-Item -ItemType Directory -Path $destination -Force | Out-Null
 
-    $extractRoot = Join-Path $downloadRoot 'source'
-    if (Test-Path $extractRoot) { Remove-Item -LiteralPath $extractRoot -Recurse -Force }
-    New-Item -ItemType Directory -Path $extractRoot | Out-Null
+    $itemExtractRoot = Join-Path $downloadRoot ([IO.Path]::GetFileNameWithoutExtension([IO.Path]::GetFileNameWithoutExtension($asset.name)))
+    if (Test-Path $itemExtractRoot) { Remove-Item -LiteralPath $itemExtractRoot -Recurse -Force }
+    New-Item -ItemType Directory -Path $itemExtractRoot -Force | Out-Null
     Write-Host "Extracting $($asset.name)..."
-    Expand-Archive -LiteralPath $archivePath -DestinationPath $extractRoot -Force
+    Expand-Archive -LiteralPath $archivePath -DestinationPath $itemExtractRoot -Force
 
     # The release contains source packs that may themselves be ZIP files.
     # Expand those nested packs recursively so the Unreal import stage can see
@@ -90,13 +94,16 @@ foreach ($item in $manifest.assets) {
     # Keep raw source packs outside Content. Unreal must import FBX/OBJ/etc.
     # into .uasset assets before they can be cooked.
     $sourceRoot = $extractRoot
-    $entries = @(Get-ChildItem -LiteralPath $extractRoot -Force)
+    $entries = @(Get-ChildItem -LiteralPath $itemExtractRoot -Force)
     if ($entries.Count -eq 1 -and $entries[0].PSIsContainer -and $entries[0].Name -eq 'ALSAEQA_REAL_ASSETS') {
         $sourceRoot = $entries[0].FullName
     }
-    "ALSAEQA_ASSET_SOURCE_ROOT=$sourceRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
+    
 }
 
+
+$allSourceRoots | ConvertTo-Json -Compress | Out-File -FilePath (Join-Path $downloadRoot 'source-roots.json') -Encoding utf8
+"ALSAEQA_ASSET_SOURCE_ROOTS=$(Join-Path $downloadRoot 'source-roots.json')" | Out-File -FilePath $env:GITHUB_ENV -Append
 
 $contentRoot = Join-Path $ProjectRoot 'Content'
 $uassetCount = @(Get-ChildItem -LiteralPath $contentRoot -Recurse -File -Filter '*.uasset' -ErrorAction SilentlyContinue).Count
