@@ -26,6 +26,7 @@ enum class EALSAEQAWorkerRescueState : uint8
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAWorkerRescuedSignature, AALSAEQAWorkerPrisonerActor*, Worker);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAWorkerEscapeStartedSignature, AALSAEQAWorkerPrisonerActor*, Worker);
 
 UCLASS(Blueprintable)
 class ALSAEQA_API AALSAEQAWorkerPrisonerActor : public AALSAEQAInteractable
@@ -59,6 +60,7 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue", meta=(ClampMin="0.1", UIMin="0.1")) float GuardPressurePause = 0.75f;
 
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Rescue") FALSAEQAWorkerRescuedSignature OnWorkerRescued;
+    UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Rescue") FALSAEQAWorkerEscapeStartedSignature OnWorkerEscapeStarted;
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue") void PlayRescuePresentation(EALSAEQAWorkerRescueMethod Method, FName SequenceTag);
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue") void PlayRescueInterruptedPresentation();
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue") void PlayWorkerEscapePresentation();
