@@ -35,6 +35,8 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|AI") AActor* GetTargetActor() const { return TargetActor.Get(); }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Health") UALSAEQAHealthComponent* GetHealthComponent() const { return HealthComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Visual") UALSAEQAVisualAssetComponent* GetVisualAssetComponent() const { return VisualAssetComponent; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression|Stage1") bool IsStageOneMineGuard() const { return bStageOneMineGuard; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression|Stage1") bool CountsAsStageOneSlaver() const { return bCountsAsStageOneSlaver; }
     virtual float ReceiveALSAEQADamage_Implementation(const FALSAEQADamageInfo& DamageInfo) override;
 
 protected:
