@@ -61,6 +61,12 @@ void AALSAEQAWorkerPrisonerActor::SetSafePoint(FVector NewSafePoint)
     SafePoint = NewSafePoint;
 }
 
+void AALSAEQAWorkerPrisonerActor::NotifyGuardPressure(AActor* Guard)
+{
+    if (bRescued || RescueState != EALSAEQAWorkerRescueState::Escaping || !IsValid(Guard)) return;
+    PlayWorkerGuardPressurePresentation(Guard);
+}
+
 bool AALSAEQAWorkerPrisonerActor::IsRescueThreatening() const
 {
     UWorld* World = GetWorld();
@@ -131,9 +137,8 @@ void AALSAEQAWorkerPrisonerActor::FinishRescue()
 
     bRescueInProgress = false;
     RescueInstigator.Reset();
-    RescueState = EALSAEQAWorkerRescueState::Escaping;
+    BeginEscape();
     InteractionPrompt = NSLOCTEXT("ALSAEQA", "WorkerEscapingPrompt", "العامل يهرب إلى مكان آمن");
-    PlayWorkerEscapePresentation();
 
     if (FVector::DistSquared2D(GetActorLocation(), SafePoint) <= FMath::Square(SafePointRadius))
     {
