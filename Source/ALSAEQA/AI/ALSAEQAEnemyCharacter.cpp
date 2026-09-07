@@ -1,5 +1,6 @@
 #include "AI/ALSAEQAEnemyCharacter.h"
 #include "Systems/ALSAEQAHealthComponent.h"
+#include "Systems/ALSAEQAInjuryComponent.h"
 #include "Visual/ALSAEQAVisualAssetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/World.h"
@@ -56,7 +57,14 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
     const float StageAttackRateMultiplier = 1.0f + Progress * 0.003f;
     const float EffectiveDetectionRange = DetectionRange * StageDetectionMultiplier;
     const float EffectiveAttackRange = AttackRange * (1.0f + Progress * 0.0015f);
-    GetCharacterMovement()->MaxWalkSpeed = ChaseSpeed * StageSpeedMultiplier;
+
+    float InjurySpeedMultiplier = 1.0f;
+    if (const UALSAEQAInjuryComponent* Injury = FindComponentByClass<UALSAEQAInjuryComponent>())
+    {
+        InjurySpeedMultiplier = Injury->GetMovementSpeedMultiplier();
+        if (Injury->IsKnockedOut() || Injury->IsDead()) return;
+    }
+    GetCharacterMovement()->MaxWalkSpeed = ChaseSpeed * StageSpeedMultiplier * InjurySpeedMultiplier;
 
     AActor* Target = TargetActor.Get();
     if (!IsValid(Target))
@@ -83,7 +91,13 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
         AALSAEQACharacter* Player = Cast<AALSAEQACharacter>(Target);
         if (Player && Player->GetHealthComponent() && !Player->GetHealthComponent()->IsDead() && AttackCooldownRemaining <= 0.0f)
         {
-            Player->GetHealthComponent()->ApplyDamage(AttackDamage * StageDamageMultiplier);
+            FALSAEQADamageInfo Info;
+            Info.Amount = AttackDamage * StageDamageMultiplier;
+            Info.Type = EALSAEQADamageType::Physical;
+            Info.Instigator = this;
+            Info.HitLocation = Player->GetActorLocation();
+            Info.HitRegion = EALSAEQADamageHitRegion::Auto;
+            Player->GetHealthComponent()->ApplyDamageInfo(Info);
             AttackCooldownRemaining = AttackCooldown / StageAttackRateMultiplier;
         }
         return;
@@ -113,7 +127,7 @@ void AALSAEQAEnemyCharacter::SetTargetActor(AActor* NewTarget)
 float AALSAEQAEnemyCharacter::ReceiveALSAEQADamage_Implementation(const FALSAEQADamageInfo& DamageInfo)
 {
     if (!HealthComponent || HealthComponent->IsDead() || DamageInfo.Amount <= 0.0f) return 0.0f;
-    HealthComponent->ApplyDamage(DamageInfo.Amount);
+    HealthComponent->ApplyDamageInfo(DamageInfo);
     if (!HealthComponent->IsDead())
     {
         SetEnemyState(EALSAEQAEnemyState::Alert);
