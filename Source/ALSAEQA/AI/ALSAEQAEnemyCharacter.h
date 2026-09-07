@@ -49,6 +49,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float AttackRange = 180.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float AttackDamage = 12.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float AttackCooldown = 1.25f;
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Progression|Stage1") FName StageOneSlaverId = NAME_None;
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Progression|Stage1") bool bCountsAsStageOneSlaver = false;
 
 private:
