@@ -9,7 +9,7 @@
 
 UALSAEQAStage1MineResponseCoordinator::UALSAEQAStage1MineResponseCoordinator()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UALSAEQAStage1MineResponseCoordinator::BeginPlay()
