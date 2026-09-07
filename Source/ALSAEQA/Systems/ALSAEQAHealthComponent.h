@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Combat/ALSAEQADamageTypes.h"
 #include "ALSAEQAHealthComponent.generated.h"
 
 class UALSAEQAInjuryComponent;
@@ -19,6 +20,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Health")
     void ApplyDamage(float Damage);
+
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Health|Combat")
+    void ApplyDamageInfo(const FALSAEQADamageInfo& DamageInfo);
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Health")
     void Heal(float Amount);
@@ -57,6 +61,8 @@ protected:
     TObjectPtr<UALSAEQAInjuryComponent> InjuryComponent;
 
 private:
+    void ApplyInjuryFromDamage(const FALSAEQADamageInfo& DamageInfo);
+
     UFUNCTION()
     void HandleInjuryDeath();
 };
