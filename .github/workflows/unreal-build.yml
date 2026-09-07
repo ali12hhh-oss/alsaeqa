@@ -1,4 +1,4 @@
-name: ALSAEQA Unreal Build
+name: ALSAEQA Android Build
 
 on:
   workflow_dispatch:
@@ -17,37 +17,38 @@ env:
   ALSAEQA_ASSET_RELEASE_TAG: assets-v1
 
 jobs:
-  unreal-build:
-    name: Unreal Engine 5.8 Build
-    runs-on: [self-hosted, windows, unreal-5.8]
+  android-build:
+    name: ALSAEQA Android APK
+    runs-on: [self-hosted, windows]
     timeout-minutes: 180
 
     steps:
       - name: 01 - Checkout project
         uses: actions/checkout@v4
 
-      - name: 02 - Verify project and runner
+      - name: 02 - Verify project and Android runner
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-
           $projectPath = Join-Path $env:GITHUB_WORKSPACE 'ALSAEQA.uproject'
-          if (-not (Test-Path $projectPath)) {
-            throw "ALSAEQA.uproject was not found."
-          }
+          if (-not (Test-Path $projectPath)) { throw 'ALSAEQA.uproject was not found.' }
 
           $project = Get-Content $projectPath -Raw | ConvertFrom-Json
           if ($project.EngineAssociation -ne '5.8') {
             throw "Expected Unreal Engine 5.8, found $($project.EngineAssociation)."
           }
-
-          if (-not $env:UE_ROOT) {
-            throw "UE_ROOT is not configured on this self-hosted runner."
-          }
+          if (-not $env:UE_ROOT) { throw 'UE_ROOT is not configured on this self-hosted runner.' }
 
           Write-Host "Project: ALSAEQA"
           Write-Host "Engine: Unreal Engine $($project.EngineAssociation)"
-          Write-Host "Runner UE_ROOT: $env:UE_ROOT"
+          Write-Host "UE_ROOT: $env:UE_ROOT"
+
+          $editor = Join-Path $env:UE_ROOT 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
+          $uat = Join-Path $env:UE_ROOT 'Engine\Build\BatchFiles\RunUAT.bat'
+          if (-not (Test-Path $editor)) { throw "UnrealEditor-Cmd.exe not found: $editor" }
+          if (-not (Test-Path $uat)) { throw "RunUAT.bat not found: $uat" }
+          "UE_EDITOR=$editor" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "UAT=$uat" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: 03 - Download and verify real assets
         shell: powershell
@@ -56,107 +57,34 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           & "$env:GITHUB_WORKSPACE\Tools\Assets\Download-RealAssets.ps1" -ReleaseTag "$env:ALSAEQA_ASSET_RELEASE_TAG"
-          if ($LASTEXITCODE -ne 0) {
-            throw "Real asset download failed with exit code $LASTEXITCODE."
-          }
-
-          if (-not $env:ALSAEQA_ASSET_SOURCE_ROOTS) {
-            throw "Asset source roots were not produced by the downloader."
-          }
-
+          if ($LASTEXITCODE -ne 0) { throw "Real asset download failed with exit code $LASTEXITCODE." }
+          if (-not $env:ALSAEQA_ASSET_SOURCE_ROOTS) { throw 'Asset source roots were not produced.' }
           Write-Host "Asset source roots: $env:ALSAEQA_ASSET_SOURCE_ROOTS"
 
-      - name: 04 - Locate Unreal Engine 5.8 tools
+      - name: 04 - Import released authored art
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-
-          $editorCandidates = @(
-            "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe",
-            "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor.exe"
-          )
-          $editor = $editorCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $editor) {
-            throw "Unreal Editor 5.8 was not found under UE_ROOT."
-          }
-          "UE_EDITOR=$editor" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-          $ubtCandidates = @(
-            "$env:UE_ROOT\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.exe",
-            "$env:UE_ROOT\Engine\Binaries\DotNET\UnrealBuildTool.exe"
-          )
-          $ubt = $ubtCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $ubt) {
-            throw "UnrealBuildTool was not found under UE_ROOT."
-          }
-          "UBT=$ubt" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-          $uat = Join-Path $env:UE_ROOT 'Engine\Build\BatchFiles\RunUAT.bat'
-          if (-not (Test-Path $uat)) {
-            throw "RunUAT.bat was not found under UE_ROOT."
-          }
-          "UAT=$uat" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-          Write-Host "UE Editor: $editor"
-          Write-Host "UBT: $ubt"
-          Write-Host "UAT: $uat"
-
-      - name: 05 - Import released authored art
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-
-          if (-not $env:ALSAEQA_ASSET_SOURCE_ROOTS) {
-            throw "Asset source roots are missing."
-          }
-
           $projectPath = Join-Path $env:GITHUB_WORKSPACE 'ALSAEQA.uproject'
           $scriptPath = Join-Path $env:GITHUB_WORKSPACE 'Tools\Unreal\ImportReleaseArt.py'
+          & "$env:UE_EDITOR" $projectPath -Unattended -NoSplash -NoSound -NoP4 "-ExecutePythonScript=$scriptPath"
+          if ($LASTEXITCODE -ne 0) { throw "Authored-art import failed with exit code $LASTEXITCODE." }
 
-          & "$env:UE_EDITOR" $projectPath `
-            -Unattended `
-            -NoSplash `
-            -NoSound `
-            -NoP4 `
-            "-ExecutePythonScript=$scriptPath"
-
-          if ($LASTEXITCODE -ne 0) {
-            throw "Unreal authored-art import failed with exit code $LASTEXITCODE."
-          }
-
-      - name: 06 - Verify imported authored art
+      - name: 05 - Verify imported authored art
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           $content = Join-Path $env:GITHUB_WORKSPACE 'Content'
           $uassets = @(Get-ChildItem -LiteralPath $content -Recurse -File -Filter '*.uasset' -ErrorAction SilentlyContinue)
           $umaps = @(Get-ChildItem -LiteralPath $content -Recurse -File -Filter '*.umap' -ErrorAction SilentlyContinue)
-
           Write-Host "Imported .uasset: $($uassets.Count)"
           Write-Host "Imported .umap: $($umaps.Count)"
+          if (($uassets.Count + $umaps.Count) -eq 0) { throw 'No imported Unreal assets were found.' }
 
-          if (($uassets.Count + $umaps.Count) -eq 0) {
-            throw "No imported Unreal assets were found after Release import."
-          }
-
-      - name: 07 - Build Windows Development
+      - name: 06 - Package Android Development APK
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          & "$env:UBT" ALSAEQA Win64 Development `
-            -Project="$env:GITHUB_WORKSPACE\ALSAEQA.uproject" `
-            -NoHotReloadFromIDE `
-            -WaitMutex
-
-          if ($LASTEXITCODE -ne 0) {
-            throw "UnrealBuildTool Windows build failed with exit code $LASTEXITCODE."
-          }
-
-      - name: 08 - Package Android Development
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-
           $projectPath = Join-Path $env:GITHUB_WORKSPACE 'ALSAEQA.uproject'
           $androidOutput = Join-Path $env:GITHUB_WORKSPACE 'Build\Android'
           New-Item -ItemType Directory -Force -Path $androidOutput | Out-Null
@@ -175,33 +103,30 @@ jobs:
             -archivedirectory="$androidOutput" `
             -utf8output
 
-          if ($LASTEXITCODE -ne 0) {
-            throw "Android packaging failed with exit code $LASTEXITCODE."
-          }
+          if ($LASTEXITCODE -ne 0) { throw "Android packaging failed with exit code $LASTEXITCODE." }
 
-      - name: 09 - Verify Android package
+      - name: 07 - Verify APK
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           $apkFiles = @(Get-ChildItem -LiteralPath "$env:GITHUB_WORKSPACE\Build\Android" -Recurse -File -Filter '*.apk' -ErrorAction SilentlyContinue)
           Write-Host "APK files: $($apkFiles.Count)"
           $apkFiles | ForEach-Object { Write-Host $_.FullName }
+          if ($apkFiles.Count -eq 0) { throw 'Android packaging produced no APK.' }
 
-          if ($apkFiles.Count -eq 0) {
-            throw "Android packaging completed without producing an APK."
-          }
-
-      - name: 10 - Upload Android APK
+      - name: 08 - Upload Android APK
         uses: actions/upload-artifact@v4
         with:
           name: ALSAEQA-Android-Development
           path: Build/Android/**/*.apk
           if-no-files-found: error
 
-      - name: 11 - Upload build receipts
+      - name: 09 - Upload build diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ALSAEQA-build-receipts
-          path: Build/Receipts/**
+          name: ALSAEQA-build-diagnostics
+          path: |
+            Build/Receipts/**
+            Saved/Logs/**
           if-no-files-found: ignore
