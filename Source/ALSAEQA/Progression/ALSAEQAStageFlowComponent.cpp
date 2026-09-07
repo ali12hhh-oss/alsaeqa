@@ -3,6 +3,7 @@
 #include "Progression/ALSAEQAProgressionComponent.h"
 #include "Progression/ALSAEQAProgressionStageRegistry.h"
 #include "Save/ALSAEQASaveManager.h"
+#include "Story/ALSAEQALegacyComponent.h"
 #include "Cinematic/ALSAEQACinematicDirector.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
@@ -20,9 +21,6 @@ void UALSAEQAStageFlowComponent::BeginPlay()
     AActor* Owner = GetOwner();
     Progression = Owner ? Owner->FindComponentByClass<UALSAEQAProgressionComponent>() : nullptr;
 
-    // The hero owns the stage-flow/objective components. Guarantee that the
-    // canonical progression state exists on the same actor so automatic flow
-    // cannot silently fail just because a Blueprint omitted one component.
     if (!Progression && Owner)
     {
         Progression = NewObject<UALSAEQAProgressionComponent>(Owner, UALSAEQAProgressionComponent::StaticClass(), TEXT("ProgressionComponent"));
@@ -45,6 +43,11 @@ void UALSAEQAStageFlowComponent::BeginPlay()
         {
             Progression->AdvanceStage(SavedStage);
         }
+    }
+
+    if (UALSAEQALegacyComponent* Legacy = Owner ? Owner->FindComponentByClass<UALSAEQALegacyComponent>() : nullptr)
+    {
+        Legacy->SetCurrentStage(Progression->GetCurrentStage());
     }
 }
 
@@ -121,11 +124,13 @@ void UALSAEQAStageFlowComponent::ApplyPendingTransition()
             }
         }
 
-        // The stage change is a real authored story beat, not a menu action.
-        // Blueprints/Sequencer can bind to this event to play the short
-        // transition shot before the next stage takes over.
         if (AActor* Owner = GetOwner())
         {
+            if (UALSAEQALegacyComponent* Legacy = Owner->FindComponentByClass<UALSAEQALegacyComponent>())
+            {
+                Legacy->SetCurrentStage(NextStage);
+            }
+
             if (UALSAEQACinematicDirector* Cinematic = Owner->FindComponentByClass<UALSAEQACinematicDirector>())
             {
                 Cinematic->StartStoryBeat(EALSAEQACinematicEvent::StageTransition);
