@@ -6,6 +6,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Player/ALSAEQACharacter.h"
+#include "Interaction/ALSAEQAWorkerPrisonerActor.h"
 #include "Progression/ALSAEQAStageObjectiveComponent.h"
 #include "Save/ALSAEQASaveManager.h"
 #include "Engine/GameInstance.h"
@@ -23,6 +24,7 @@ void AALSAEQAEnemyCharacter::BeginPlay()
     Super::BeginPlay();
     if (HealthComponent) HealthComponent->OnDeath.AddDynamic(this, &AALSAEQAEnemyCharacter::HandleDeath);
     AttackCooldownRemaining = 0.0f;
+    WorkerAttackCooldownRemaining = 0.0f;
 
     if (bCountsAsStageOneSlaver && !StageOneSlaverId.IsNone() && GetGameInstance())
     {
@@ -43,11 +45,15 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
     if (EnemyState == EALSAEQAEnemyState::Dead || !GetWorld()) return;
 
     AttackCooldownRemaining = FMath::Max(0.0f, AttackCooldownRemaining - DeltaSeconds);
+    WorkerAttackCooldownRemaining = FMath::Max(0.0f, WorkerAttackCooldownRemaining - DeltaSeconds);
 
     int32 CurrentStage = 1;
     if (UGameInstance* GameInstance = GetGameInstance())
     {
-        if (UALSAEQASaveManager* SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>()) CurrentStage = FMath::Max(1, SaveManager->GetStage());
+        if (UALSAEQASaveManager* SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>())
+        {
+            CurrentStage = FMath::Max(1, SaveManager->GetStage());
+        }
     }
 
     const float Progress = static_cast<float>(CurrentStage - 1);
@@ -67,6 +73,32 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
     GetCharacterMovement()->MaxWalkSpeed = ChaseSpeed * StageSpeedMultiplier * InjurySpeedMultiplier;
 
     AActor* Target = TargetActor.Get();
+
+    if (CurrentStage == 1 && bStageOneMineGuard)
+    {
+        AALSAEQAWorkerPrisonerActor* ClosestEscapingWorker = nullptr;
+        float ClosestWorkerDistanceSquared = FMath::Square(WorkerThreatRange);
+
+        for (TActorIterator<AALSAEQAWorkerPrisonerActor> It(GetWorld()); It; ++It)
+        {
+            AALSAEQAWorkerPrisonerActor* Worker = *It;
+            if (!IsValid(Worker) || Worker->IsSafe() || Worker->GetRescueState() != EALSAEQAWorkerRescueState::Escaping) continue;
+
+            const float DistanceSquared = FVector::DistSquared2D(GetActorLocation(), Worker->GetActorLocation());
+            if (DistanceSquared <= ClosestWorkerDistanceSquared)
+            {
+                ClosestWorkerDistanceSquared = DistanceSquared;
+                ClosestEscapingWorker = Worker;
+            }
+        }
+
+        if (ClosestEscapingWorker)
+        {
+            Target = ClosestEscapingWorker;
+            SetTargetActor(Target);
+        }
+    }
+
     if (!IsValid(Target))
     {
         for (TActorIterator<AALSAEQACharacter> It(GetWorld()); It; ++It)
@@ -82,8 +114,50 @@ void AALSAEQAEnemyCharacter::Tick(float DeltaSeconds)
     }
 
     if (!IsValid(Target)) { SetEnemyState(EALSAEQAEnemyState::Idle); return; }
+
     const float Distance = FVector::Dist(GetActorLocation(), Target->GetActorLocation());
-    if (Distance > EffectiveDetectionRange) { TargetActor.Reset(); SetEnemyState(EALSAEQAEnemyState::Idle); return; }
+    const bool bTargetIsWorker = Target->IsA<AALSAEQAWorkerPrisonerActor>();
+    const float EffectiveTargetRange = bTargetIsWorker ? WorkerThreatRange : EffectiveDetectionRange;
+    if (Distance > EffectiveTargetRange)
+    {
+        TargetActor.Reset();
+        SetEnemyState(EALSAEQAEnemyState::Idle);
+        return;
+    }
+
+    if (bTargetIsWorker)
+    {
+        AALSAEQAWorkerPrisonerActor* Worker = Cast<AALSAEQAWorkerPrisonerActor>(Target);
+        if (!Worker || Worker->IsSafe() || Worker->GetRescueState() != EALSAEQAWorkerRescueState::Escaping)
+        {
+            TargetActor.Reset();
+            SetEnemyState(EALSAEQAEnemyState::Alert);
+            return;
+        }
+
+        if (Distance <= WorkerAttackRange)
+        {
+            SetEnemyState(EALSAEQAEnemyState::Attack);
+            if (WorkerAttackCooldownRemaining <= 0.0f)
+            {
+                Worker->NotifyGuardPressure(this);
+                WorkerAttackCooldownRemaining = WorkerAttackCooldown;
+            }
+            return;
+        }
+
+        SetEnemyState(EALSAEQAEnemyState::Chase);
+        const FVector Direction = (Worker->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
+        AddMovementInput(Direction, 1.0f);
+        return;
+    }
+
+    if (Distance > EffectiveDetectionRange)
+    {
+        TargetActor.Reset();
+        SetEnemyState(EALSAEQAEnemyState::Idle);
+        return;
+    }
 
     if (Distance <= EffectiveAttackRange)
     {
@@ -160,6 +234,6 @@ void AALSAEQAEnemyCharacter::HandleDeath()
 
     if (!SaveManager->RecordStageOneSlaverDefeated(StageOneSlaverId)) return;
 
-    int32 CurrentStage = SaveManager->GetStage();
+    const int32 CurrentStage = SaveManager->GetStage();
     if (CurrentStage == 1) Objectives->RegisterProgress(TEXT("DefeatSlavers"), 1);
 }
