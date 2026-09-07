@@ -113,11 +113,6 @@ void UALSAEQAHealthComponent::ApplyInjuryFromDamage(const FALSAEQADamageInfo& Da
         }
     }
 
-    if (Part == EALSAEQAInjuryBodyPart::Head && (DamageInfo.bCritical || Severity >= 0.75f))
-    {
-        InjuryComponent->ApplyOrganInjury(EALSAEQAInjuryOrgan::None, 0.0f);
-    }
-
     if (Part == EALSAEQAInjuryBodyPart::Torso && DamageInfo.Amount >= 35.0f)
     {
         InjuryComponent->ApplyOrganInjury(EALSAEQAInjuryOrgan::Lungs, FMath::Clamp(Severity * 0.75f, 0.1f, 0.9f));
