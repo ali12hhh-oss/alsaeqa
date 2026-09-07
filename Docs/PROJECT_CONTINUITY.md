@@ -37,12 +37,16 @@ Hard rules: connected revisitable world; automatic story-driven stage transition
 - Stage 1 default objectives: `RescueWorkers` = 5 and `DefeatSlavers` = 1.
 - Real slaver death linkage: only enemies explicitly marked `bCountsAsStageOneSlaver` report `DefeatSlavers`, and each enemy reports at most once.
 - Real worker/prisoner rescue actor: `AALSAEQAWorkerPrisonerActor`; each rescued worker reports +1 exactly once and fires the Rescue cinematic story beat.
-- Player `Interact` action now finds the nearest forward-facing interactable within 240 units; `Config/DefaultInput.ini` maps it to `E`.
-- Automatic stage transition now fires a dedicated `StageTransition` cinematic story beat after the progression/save update.
+- Worker rescue supports five distinct authored methods: Break Chain, Open Cage, Release Lift, Cut Binding and Escort Out. Each worker also has an optional `RescueSequenceTag` so real mine assets/Blueprints can provide different presentations without changing progression logic.
+- Player `Interact` action finds the nearest forward-facing interactable within 240 units; `Config/DefaultInput.ini` maps it to `E`.
+- Automatic stage transition fires a dedicated `StageTransition` cinematic story beat after the progression/save update.
 - Cinematic director exposes `HandleStoryBeat` as a Blueprint implementation point, so rescue and transition beats can drive authored camera/Sequencer presentation rather than being data-only events.
 - Cinematic director action moments for heavy combat and high-charge thunder.
 - Hero integration with stage flow/objectives.
 - Real-asset release/import documentation and primitive-fallback prohibition.
+
+## Latest implementation block
+The worker rescue actor was strengthened so each of the five mine workers can be authored as a different physical rescue scenario. The progression gate remains centralized: a worker only counts after a valid Stage 1 hero interaction, and the actor is locked before reporting progress so duplicate interactions cannot inflate the 5-worker requirement. The Blueprint presentation hook is intentionally separate from the progression result so real cage/chain/lift/worker assets can be wired later without changing the gameplay contract.
 
 ## Engineering queue
 1. Turn the five-worker rescue into a fully authored mine sequence: distributed worker locations, cages/chains, varied rescue interactions and a coordinated enemy response.
