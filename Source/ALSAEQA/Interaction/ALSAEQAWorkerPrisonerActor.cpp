@@ -55,6 +55,10 @@ bool AALSAEQAWorkerPrisonerActor::Rescue(AActor* Rescuer)
         return false;
     }
 
+    // The progression event is shared, while the presentation is intentionally
+    // different for each worker (chain/cage/lift/binding/escort).
+    PlayRescuePresentation(RescueMethod, RescueSequenceTag);
+
     if (UALSAEQACinematicDirector* Cinematic = Hero->GetCinematicDirector())
     {
         Cinematic->StartStoryBeat(EALSAEQACinematicEvent::Rescue);
