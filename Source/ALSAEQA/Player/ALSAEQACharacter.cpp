@@ -76,6 +76,10 @@ void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
     PlayerInputComponent->BindAction(TEXT("HeavyAttack"), IE_Pressed, this, &AALSAEQACharacter::PerformHeavyAttack);
     PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Pressed, this, &AALSAEQACharacter::StartSprint);
     PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Released, this, &AALSAEQACharacter::StopSprint);
+    PlayerInputComponent->BindAction(TEXT("Crouch"), IE_Pressed, this, &AALSAEQACharacter::ToggleCrouch);
+    PlayerInputComponent->BindAction(TEXT("Listen"), IE_Pressed, this, &AALSAEQACharacter::StartListen);
+    PlayerInputComponent->BindAction(TEXT("Listen"), IE_Released, this, &AALSAEQACharacter::StopListen);
+    PlayerInputComponent->BindAction(TEXT("Roll"), IE_Pressed, this, &AALSAEQACharacter::PerformRoll);
     PlayerInputComponent->BindAction(TEXT("Mount"), IE_Pressed, this, &AALSAEQACharacter::HandleMountInput);
     PlayerInputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AALSAEQACharacter::InteractWithNearest);
     PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Pressed, this, &AALSAEQACharacter::BeginThunderCharge);
@@ -162,6 +166,70 @@ void AALSAEQACharacter::StartSprint()
 void AALSAEQACharacter::StopSprint()
 {
     if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->SetSprint(false); return; }
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void AALSAEQACharacter::ToggleCrouch()
+{
+    if (bDeathInProgress || bRolling || IsRiding()) return;
+    if (GetCharacterMovement()->IsCrouching())
+    {
+        StopCrouching();
+        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+        PlayMovementPresentation(TEXT("Stand"));
+    }
+    else
+    {
+        StopSprint();
+        Crouch();
+        GetCharacterMovement()->MaxWalkSpeed = CrouchSpeed;
+        PlayMovementPresentation(TEXT("Crouch"));
+    }
+}
+
+void AALSAEQACharacter::StartListen()
+{
+    if (bDeathInProgress || bRolling || IsRiding()) return;
+    bListening = true;
+    StopSprint();
+    if (!GetCharacterMovement()->IsCrouching()) Crouch();
+    GetCharacterMovement()->MaxWalkSpeed = 0.0f;
+    PlayListenPresentation(true);
+    PlayMovementPresentation(TEXT("Listen"));
+}
+
+void AALSAEQACharacter::StopListen()
+{
+    if (!bListening) return;
+    bListening = false;
+    GetCharacterMovement()->MaxWalkSpeed = GetCharacterMovement()->IsCrouching() ? CrouchSpeed : WalkSpeed;
+    PlayListenPresentation(false);
+}
+
+void AALSAEQACharacter::PerformRoll()
+{
+    if (bDeathInProgress || bRolling || !bRollReady || IsRiding() || bListening || !GetCharacterMovement()->IsMovingOnGround()) return;
+    FVector Direction = GetLastMovementInputVector();
+    if (Direction.IsNearlyZero()) Direction = GetActorForwardVector();
+    Direction.Z = 0.0f;
+    Direction.Normalize();
+    if (Direction.IsNearlyZero()) return;
+
+    StopSprint();
+    if (GetCharacterMovement()->IsCrouching()) StopCrouching();
+    bRolling = true;
+    bRollReady = false;
+    GetCharacterMovement()->BrakingFrictionFactor = 0.0f;
+    LaunchCharacter(Direction * RollStrength, false, false);
+    PlayRollPresentation();
+    GetWorldTimerManager().SetTimer(RollTimerHandle, this, &AALSAEQACharacter::FinishRoll, RollDuration, false);
+    GetWorldTimerManager().SetTimer(RollCooldownTimerHandle, [this]() { bRollReady = true; }, RollCooldown, false);
+}
+
+void AALSAEQACharacter::FinishRoll()
+{
+    bRolling = false;
+    GetCharacterMovement()->BrakingFrictionFactor = 2.0f;
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
