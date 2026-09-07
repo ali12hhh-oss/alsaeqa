@@ -43,6 +43,13 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Mounts") bool HasTamedMount(FName MountId) const;
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Mounts") FALSAEQAMountProfile GetTamedMount(FName MountId) const;
 
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Stage1") bool RecordStageOneWorkerRescued(FName WorkerId);
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Stage1") bool HasStageOneWorkerRescued(FName WorkerId) const;
+    UFUNCTION(BlueprintCallable, Category="ALSAEQA|Stage1") bool RecordStageOneSlaverDefeated(FName SlaverId);
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Stage1") bool HasStageOneSlaverDefeated(FName SlaverId) const;
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Stage1") int32 GetStageOneWorkersRescuedCount() const;
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Stage1") int32 GetStageOneSlaversDefeatedCount() const;
+
 private:
     static const FString SaveSlotName;
     static constexpr int32 FamilySearchStartStage = 25;
