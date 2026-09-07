@@ -1,0 +1,120 @@
+#include "Progression/ALSAEQAStageObjectiveComponent.h"
+
+#include "Progression/ALSAEQAStageFlowComponent.h"
+#include "TimerManager.h"
+
+UALSAEQAStageObjectiveComponent::UALSAEQAStageObjectiveComponent()
+{
+    PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UALSAEQAStageObjectiveComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    StageFlow = GetOwner() ? GetOwner()->FindComponentByClass<UALSAEQAStageFlowComponent>() : nullptr;
+    ResetObjectives();
+}
+
+void UALSAEQAStageObjectiveComponent::ResetObjectives()
+{
+    ObjectiveProgress.Reset();
+    for (const TPair<FName, int32>& Pair : ObjectiveRequirements)
+    {
+        if (!Pair.Key.IsNone())
+        {
+            ObjectiveProgress.Add(Pair.Key, 0);
+        }
+    }
+}
+
+int32 UALSAEQAStageObjectiveComponent::GetObjectiveProgress(FName ObjectiveId) const
+{
+    if (const int32* Value = ObjectiveProgress.Find(ObjectiveId))
+    {
+        return *Value;
+    }
+    return 0;
+}
+
+bool UALSAEQAStageObjectiveComponent::IsObjectiveComplete(FName ObjectiveId) const
+{
+    const int32* Requirement = ObjectiveRequirements.Find(ObjectiveId);
+    if (!Requirement || *Requirement <= 0)
+    {
+        return false;
+    }
+    return GetObjectiveProgress(ObjectiveId) >= *Requirement;
+}
+
+int32 UALSAEQAStageObjectiveComponent::GetCompletedObjectiveCount() const
+{
+    int32 Count = 0;
+    for (const TPair<FName, int32>& Pair : ObjectiveRequirements)
+    {
+        if (Pair.Value > 0 && IsObjectiveComplete(Pair.Key))
+        {
+            ++Count;
+        }
+    }
+    return Count;
+}
+
+bool UALSAEQAStageObjectiveComponent::AreAllObjectivesComplete() const
+{
+    if (ObjectiveRequirements.Num() == 0)
+    {
+        return false;
+    }
+
+    for (const TPair<FName, int32>& Pair : ObjectiveRequirements)
+    {
+        if (Pair.Value <= 0 || !IsObjectiveComplete(Pair.Key))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool UALSAEQAStageObjectiveComponent::RegisterProgress(FName ObjectiveId, int32 Amount)
+{
+    if (ObjectiveId.IsNone() || Amount <= 0 || !ObjectiveRequirements.Contains(ObjectiveId) || IsObjectiveComplete(ObjectiveId))
+    {
+        return false;
+    }
+
+    const int32 Requirement = ObjectiveRequirements.FindChecked(ObjectiveId);
+    const int32 NewProgress = FMath::Clamp(GetObjectiveProgress(ObjectiveId) + Amount, 0, Requirement);
+    ObjectiveProgress.FindOrAdd(ObjectiveId) = NewProgress;
+    OnObjectiveProgress.Broadcast(ObjectiveId, NewProgress);
+
+    if (NewProgress >= Requirement)
+    {
+        OnObjectiveCompleted.Broadcast(ObjectiveId);
+    }
+
+    FinalizeStageIfReady();
+    return true;
+}
+
+bool UALSAEQAStageObjectiveComponent::CompleteObjective(FName ObjectiveId)
+{
+    if (!ObjectiveRequirements.Contains(ObjectiveId))
+    {
+        return false;
+    }
+
+    const int32 Requirement = FMath::Max(1, ObjectiveRequirements.FindChecked(ObjectiveId));
+    const int32 Current = GetObjectiveProgress(ObjectiveId);
+    if (Current >= Requirement)
+    {
+        return false;
+    }
+
+    return RegisterProgress(ObjectiveId, Requirement - Current);
+}
+
+bool UALSAEQAStageObjectiveComponent::FinalizeStageIfReady()
+{
+    return StageFlow && AreAllObjectivesComplete() && StageFlow->CompleteCurrentStage();
+}
