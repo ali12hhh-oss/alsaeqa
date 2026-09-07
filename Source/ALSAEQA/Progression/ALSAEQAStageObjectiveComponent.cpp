@@ -3,6 +3,8 @@
 #include "Progression/ALSAEQAProgressionComponent.h"
 #include "Progression/ALSAEQAStageFlowComponent.h"
 #include "Story/ALSAEQALegacyComponent.h"
+#include "Save/ALSAEQASaveManager.h"
+#include "Engine/GameInstance.h"
 
 UALSAEQAStageObjectiveComponent::UALSAEQAStageObjectiveComponent()
 {
@@ -14,21 +16,44 @@ void UALSAEQAStageObjectiveComponent::BeginPlay()
     Super::BeginPlay();
     StageFlow = GetOwner() ? GetOwner()->FindComponentByClass<UALSAEQAStageFlowComponent>() : nullptr;
 
-    if (ObjectiveRequirements.Num() == 0)
+    int32 StageNumber = 1;
+    if (UALSAEQAProgressionComponent* Progression = GetOwner() ? GetOwner()->FindComponentByClass<UALSAEQAProgressionComponent>() : nullptr)
     {
-        int32 StageNumber = 1;
-        if (UALSAEQAProgressionComponent* Progression = GetOwner() ? GetOwner()->FindComponentByClass<UALSAEQAProgressionComponent>() : nullptr)
-        {
-            StageNumber = Progression->GetCurrentStage();
-        }
-        if (StageNumber == 1)
-        {
-            ObjectiveRequirements.Add(TEXT("RescueWorkers"), 5);
-            ObjectiveRequirements.Add(TEXT("DefeatSlavers"), 1);
-        }
+        StageNumber = Progression->GetCurrentStage();
+    }
+
+    if (ObjectiveRequirements.Num() == 0 && StageNumber == 1)
+    {
+        ObjectiveRequirements.Add(TEXT("RescueWorkers"), 5);
+        ObjectiveRequirements.Add(TEXT("DefeatSlavers"), 1);
     }
 
     ResetObjectives();
+
+    // Rehydrate the mandatory Stage 1 gates from the persistent identities.
+    // This prevents a map reload from resetting a previously rescued worker
+    // or defeated slaver back to 0/5 and 0/1.
+    if (StageNumber == 1 && GetOwner() && GetOwner()->GetGameInstance())
+    {
+        if (UALSAEQASaveManager* SaveManager = GetOwner()->GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
+        {
+            if (ObjectiveRequirements.Contains(TEXT("RescueWorkers")))
+            {
+                ObjectiveProgress.FindOrAdd(TEXT("RescueWorkers")) = FMath::Clamp(
+                    SaveManager->GetStageOneWorkersRescuedCount(), 0, ObjectiveRequirements.FindChecked(TEXT("RescueWorkers")));
+            }
+
+            if (ObjectiveRequirements.Contains(TEXT("DefeatSlavers")))
+            {
+                ObjectiveProgress.FindOrAdd(TEXT("DefeatSlavers")) = FMath::Clamp(
+                    SaveManager->GetStageOneSlaversDefeatedCount(), 0, ObjectiveRequirements.FindChecked(TEXT("DefeatSlavers")));
+            }
+        }
+    }
+
+    // If the player had already satisfied both gates immediately before a
+    // reload, resume the pending automatic transition instead of deadlocking.
+    FinalizeStageIfReady();
 }
 
 void UALSAEQAStageObjectiveComponent::ResetObjectives()
@@ -102,9 +127,6 @@ bool UALSAEQAStageObjectiveComponent::FinalizeStageIfReady()
 {
     if (!StageFlow || !AreAllObjectivesComplete()) return false;
 
-    // Stage 1's first clue is unlocked exactly once at the moment both
-    // mandatory gameplay gates are satisfied. It is a story discovery, not
-    // an extra gate, so the automatic stage transition cannot deadlock.
     if (AActor* Owner = GetOwner())
     {
         if (UALSAEQALegacyComponent* Legacy = Owner->FindComponentByClass<UALSAEQALegacyComponent>())
