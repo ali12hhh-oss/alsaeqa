@@ -2,6 +2,7 @@
 
 #include "Progression/ALSAEQAProgressionComponent.h"
 #include "Progression/ALSAEQAStageFlowComponent.h"
+#include "Story/ALSAEQALegacyComponent.h"
 
 UALSAEQAStageObjectiveComponent::UALSAEQAStageObjectiveComponent()
 {
@@ -22,9 +23,6 @@ void UALSAEQAStageObjectiveComponent::BeginPlay()
         }
         if (StageNumber == 1)
         {
-            // Stage 1 is a real mine rescue, not a single-worker objective.
-            // Five separate worker actors must be rescued before the objective
-            // can complete. Each worker reports +1 exactly once.
             ObjectiveRequirements.Add(TEXT("RescueWorkers"), 5);
             ObjectiveRequirements.Add(TEXT("DefeatSlavers"), 1);
         }
@@ -77,11 +75,14 @@ bool UALSAEQAStageObjectiveComponent::AreAllObjectivesComplete() const
 bool UALSAEQAStageObjectiveComponent::RegisterProgress(FName ObjectiveId, int32 Amount)
 {
     if (ObjectiveId.IsNone() || Amount <= 0 || !ObjectiveRequirements.Contains(ObjectiveId) || IsObjectiveComplete(ObjectiveId)) return false;
+
     const int32 Requirement = ObjectiveRequirements.FindChecked(ObjectiveId);
     const int32 NewProgress = FMath::Clamp(GetObjectiveProgress(ObjectiveId) + Amount, 0, Requirement);
     ObjectiveProgress.FindOrAdd(ObjectiveId) = NewProgress;
     OnObjectiveProgress.Broadcast(ObjectiveId, NewProgress);
+
     if (NewProgress >= Requirement) OnObjectiveCompleted.Broadcast(ObjectiveId);
+
     FinalizeStageIfReady();
     return true;
 }
@@ -89,13 +90,29 @@ bool UALSAEQAStageObjectiveComponent::RegisterProgress(FName ObjectiveId, int32 
 bool UALSAEQAStageObjectiveComponent::CompleteObjective(FName ObjectiveId)
 {
     if (!ObjectiveRequirements.Contains(ObjectiveId)) return false;
+
     const int32 Requirement = FMath::Max(1, ObjectiveRequirements.FindChecked(ObjectiveId));
     const int32 Current = GetObjectiveProgress(ObjectiveId);
     if (Current >= Requirement) return false;
+
     return RegisterProgress(ObjectiveId, Requirement - Current);
 }
 
 bool UALSAEQAStageObjectiveComponent::FinalizeStageIfReady()
 {
-    return StageFlow && AreAllObjectivesComplete() && StageFlow->CompleteCurrentStage();
+    if (!StageFlow || !AreAllObjectivesComplete()) return false;
+
+    // Stage 1's first clue is unlocked exactly once at the moment both
+    // mandatory gameplay gates are satisfied. It is a story discovery, not
+    // an extra gate, so the automatic stage transition cannot deadlock.
+    if (AActor* Owner = GetOwner())
+    {
+        if (UALSAEQALegacyComponent* Legacy = Owner->FindComponentByClass<UALSAEQALegacyComponent>())
+        {
+            Legacy->AddFamilyClue(TEXT("Stage1_MineNetwork"));
+            Legacy->SetLegacyFlag(TEXT("Stage1_FirstClueFound"), true);
+        }
+    }
+
+    return StageFlow->CompleteCurrentStage();
 }
