@@ -28,6 +28,7 @@ void UALSAEQAInjuryComponent::SetLimbSevered(EALSAEQAInjuryBodyPart BodyPart, bo
 {
     const bool bLimb = BodyPart == EALSAEQAInjuryBodyPart::LeftArm || BodyPart == EALSAEQAInjuryBodyPart::RightArm || BodyPart == EALSAEQAInjuryBodyPart::LeftLeg || BodyPart == EALSAEQAInjuryBodyPart::RightLeg;
     if (!bLimb || State == EALSAEQAInjuryState::Dead) return;
+
     if (bSevered)
     {
         SeveredLimbs.Add(BodyPart);
@@ -38,6 +39,7 @@ void UALSAEQAInjuryComponent::SetLimbSevered(EALSAEQAInjuryBodyPart BodyPart, bo
     {
         SeveredLimbs.Remove(BodyPart);
     }
+
     OnLimbChanged.Broadcast(BodyPart);
     RecalculateState();
 }
@@ -47,9 +49,12 @@ void UALSAEQAInjuryComponent::SetKnockedOut(bool bValue)
     if (State == EALSAEQAInjuryState::Dead) return;
     if (bValue)
     {
-        State = EALSAEQAInjuryState::KnockedOut;
-        PlayKnockoutPresentation(true);
-        OnInjuryStateChanged.Broadcast(State, 1.0f);
+        if (State != EALSAEQAInjuryState::KnockedOut)
+        {
+            State = EALSAEQAInjuryState::KnockedOut;
+            PlayKnockoutPresentation(true);
+            OnInjuryStateChanged.Broadcast(State, 1.0f);
+        }
     }
     else
     {
@@ -66,9 +71,28 @@ void UALSAEQAInjuryComponent::RecoverFromKnockout()
 
 void UALSAEQAInjuryComponent::ClearTemporaryInjuries()
 {
+    if (State == EALSAEQAInjuryState::Dead) return;
     BodyPartSeverity.Reset();
     OrganSeverity.Reset();
-    if (State != EALSAEQAInjuryState::Dead) State = EALSAEQAInjuryState::Healthy;
+    State = SeveredLimbs.Num() > 0 ? EALSAEQAInjuryState::Injured : EALSAEQAInjuryState::Healthy;
+    OnInjuryStateChanged.Broadcast(State, 0.0f);
+}
+
+void UALSAEQAInjuryComponent::MarkDead()
+{
+    if (State == EALSAEQAInjuryState::Dead) return;
+    State = EALSAEQAInjuryState::Dead;
+    OnInjuryStateChanged.Broadcast(State, 1.0f);
+    PlayDeathPresentation();
+    OnFatalState.Broadcast();
+}
+
+void UALSAEQAInjuryComponent::ResetAfterDeath()
+{
+    BodyPartSeverity.Reset();
+    OrganSeverity.Reset();
+    SeveredLimbs.Reset();
+    State = EALSAEQAInjuryState::Healthy;
     OnInjuryStateChanged.Broadcast(State, 0.0f);
 }
 
@@ -92,6 +116,7 @@ bool UALSAEQAInjuryComponent::IsLimbSevered(EALSAEQAInjuryBodyPart BodyPart) con
 void UALSAEQAInjuryComponent::RecalculateState()
 {
     if (State == EALSAEQAInjuryState::Dead) return;
+
     float Highest = 0.0f;
     for (const TPair<EALSAEQAInjuryBodyPart, float>& Pair : BodyPartSeverity) Highest = FMath::Max(Highest, Pair.Value);
     for (const TPair<EALSAEQAInjuryOrgan, float>& Pair : OrganSeverity) Highest = FMath::Max(Highest, Pair.Value);
