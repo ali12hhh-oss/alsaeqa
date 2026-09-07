@@ -14,6 +14,7 @@ enum class EALSAEQACinematicEvent : uint8
     NearDeath UMETA(DisplayName="Near Death"),
     Fall UMETA(DisplayName="Fall"),
     Rescue UMETA(DisplayName="Rescue"),
+    StageTransition UMETA(DisplayName="Stage Transition"),
     TraversalStunt UMETA(DisplayName="Traversal Stunt"),
     GiantSnakeEncounter UMETA(DisplayName="Giant Snake Encounter"),
     BossReveal UMETA(DisplayName="Boss Reveal")
