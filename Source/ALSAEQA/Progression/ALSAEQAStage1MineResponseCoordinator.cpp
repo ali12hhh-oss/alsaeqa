@@ -9,7 +9,7 @@
 
 UALSAEQAStage1MineResponseCoordinator::UALSAEQAStage1MineResponseCoordinator()
 {
-    PrimaryComponentTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = false;
 }
 
 void UALSAEQAStage1MineResponseCoordinator::BeginPlay()
@@ -44,7 +44,7 @@ void UALSAEQAStage1MineResponseCoordinator::BeginPlay()
 
 void UALSAEQAStage1MineResponseCoordinator::RegisterWorker(AALSAEQAWorkerPrisonerActor* Worker)
 {
-    if (!IsValid(Worker) || Workers.Contains(Worker) || !Worker->bCountsAsStageOneWorker) return;
+    if (!IsValid(Worker) || Workers.Contains(Worker) || !Worker->CountsAsStageOneWorker()) return;
     Workers.Add(Worker);
     Worker->OnWorkerEscapeStarted.AddDynamic(this, &UALSAEQAStage1MineResponseCoordinator::HandleWorkerEscapeStarted);
     Worker->OnWorkerRescued.AddDynamic(this, &UALSAEQAStage1MineResponseCoordinator::HandleWorkerRescued);
@@ -52,7 +52,7 @@ void UALSAEQAStage1MineResponseCoordinator::RegisterWorker(AALSAEQAWorkerPrisone
 
 void UALSAEQAStage1MineResponseCoordinator::RegisterMineGuard(AALSAEQAEnemyCharacter* Guard)
 {
-    if (!IsValid(Guard) || Guards.Contains(Guard) || !Guard->bStageOneMineGuard) return;
+    if (!IsValid(Guard) || Guards.Contains(Guard) || !Guard->IsStageOneMineGuard()) return;
     Guards.Add(Guard);
 }
 
