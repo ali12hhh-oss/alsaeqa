@@ -7,11 +7,9 @@
 class AALSAEQAWorkerPrisonerActor;
 class AALSAEQAEnemyCharacter;
 
-/**
- * Coordinates the living response of the mine during Stage 1.
- * It observes worker rescue events and increases pressure without creating
- * an additional stage-completion objective.
- */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FALSAEQAStage1WorkerEscapeStartedSignature, AALSAEQAWorkerPrisonerActor*, Worker);
+
+/** Coordinates the living response of the mine during Stage 1. */
 UCLASS(ClassGroup=(ALSAEQA), BlueprintType, Blueprintable, meta=(BlueprintSpawnableComponent))
 class ALSAEQA_API UALSAEQAStage1MineResponseCoordinator : public UActorComponent
 {
@@ -43,14 +41,24 @@ protected:
 
 private:
     UFUNCTION()
+    void HandleWorkerEscapeStarted(AALSAEQAWorkerPrisonerActor* Worker);
+
+    UFUNCTION()
     void HandleWorkerRescued(AALSAEQAWorkerPrisonerActor* Worker);
 
     void RefreshGuardAssignments();
+    void ValidateStage1Setup() const;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ALSAEQA|Stage1|MineResponse", meta=(AllowPrivateAccess="true"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ALSAEQA|Stage1|MineResponse", meta=(AllowPrivateAccess="true", ClampMin="5", UIMin="5"))
+    int32 RequiredWorkers = 5;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ALSAEQA|Stage1|MineResponse", meta=(AllowPrivateAccess="true", ClampMin="7", UIMin="7"))
+    int32 MinimumMineGuards = 7;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ALSAEQA|Stage1|MineResponse", meta=(AllowPrivateAccess="true", ClampMin="1", UIMin="1"))
     int32 MaxResponseLevel = 5;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ALSAEQA|Stage1|MineResponse", meta=(AllowPrivateAccess="true"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ALSAEQA|Stage1|MineResponse", meta=(AllowPrivateAccess="true", ClampMin="1", UIMin="1"))
     int32 GuardsPerResponseLevel = 1;
 
     UPROPERTY()
