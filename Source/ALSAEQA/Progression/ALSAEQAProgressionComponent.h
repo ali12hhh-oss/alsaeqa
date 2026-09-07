@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "ALSAEQAPowerTypes.h"
+#include "ALSAEQAProgressionStageTypes.h"
 #include "ALSAEQAProgressionComponent.generated.h"
 
 delegate void FALSAEQAProgressionChanged();
@@ -23,6 +24,12 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="ALSAEQA|Progression")
     bool AdvanceStage(int32 NewStage);
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    bool IsValidStage(int32 StageNumber) const;
+
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
+    FALSAEQAProgressionStage GetStageDefinition(int32 StageNumber) const;
 
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression")
     bool HasPower(EALSAEQAPower Power) const;
@@ -58,7 +65,7 @@ public:
 
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, SaveGame, Category="ALSAEQA|Progression")
-    int32 CurrentStage = 0;
+    int32 CurrentStage = 1;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, SaveGame, Category="ALSAEQA|Progression")
     TSet<EALSAEQAPower> UnlockedPowers;
