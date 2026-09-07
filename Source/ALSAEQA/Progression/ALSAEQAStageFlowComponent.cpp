@@ -2,8 +2,10 @@
 
 #include "Progression/ALSAEQAProgressionComponent.h"
 #include "Progression/ALSAEQAProgressionStageRegistry.h"
+#include "Save/ALSAEQASaveManager.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
+#include "Engine/GameInstance.h"
 
 UALSAEQAStageFlowComponent::UALSAEQAStageFlowComponent()
 {
@@ -14,6 +16,21 @@ void UALSAEQAStageFlowComponent::BeginPlay()
 {
     Super::BeginPlay();
     Progression = GetOwner() ? GetOwner()->FindComponentByClass<UALSAEQAProgressionComponent>() : nullptr;
+
+    if (!Progression || !GetWorld() || !GetWorld()->GetGameInstance())
+    {
+        return;
+    }
+
+    if (UALSAEQASaveManager* SaveManager = GetWorld()->GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
+    {
+        SaveManager->LoadProgress();
+        const int32 SavedStage = SaveManager->GetStage();
+        if (Progression->IsValidStage(SavedStage) && SavedStage > Progression->GetCurrentStage())
+        {
+            Progression->AdvanceStage(SavedStage);
+        }
+    }
 }
 
 bool UALSAEQAStageFlowComponent::CompleteCurrentStage()
@@ -81,6 +98,14 @@ void UALSAEQAStageFlowComponent::ApplyPendingTransition()
     const int32 PreviousStage = Progression->GetCurrentStage();
     if (Progression->AdvanceStage(NextStage))
     {
+        if (GetWorld() && GetWorld()->GetGameInstance())
+        {
+            if (UALSAEQASaveManager* SaveManager = GetWorld()->GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
+            {
+                SaveManager->SetStage(NextStage);
+            }
+        }
+
         OnAutomaticStageChanged.Broadcast(PreviousStage, NextStage);
     }
 }
