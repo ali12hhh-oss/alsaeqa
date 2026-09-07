@@ -7,6 +7,7 @@
 
 class UALSAEQAHealthComponent;
 class UALSAEQAVisualAssetComponent;
+class AALSAEQAWorkerPrisonerActor;
 
 UENUM(BlueprintType)
 enum class EALSAEQAEnemyState : uint8
@@ -46,13 +47,18 @@ protected:
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|AI") TWeakObjectPtr<AActor> TargetActor;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float ChaseSpeed = 430.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float DetectionRange = 1600.0f;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|AI") float AttackRange = 180.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float AttackRange = 180.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float AttackDamage = 12.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Combat") float AttackCooldown = 1.25f;
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Progression|Stage1") FName StageOneSlaverId = NAME_None;
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Progression|Stage1") bool bCountsAsStageOneSlaver = false;
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="ALSAEQA|Progression|Stage1") bool bStageOneMineGuard = false;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Progression|Stage1", meta=(ClampMin="100.0", UIMin="100.0")) float WorkerThreatRange = 1100.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Progression|Stage1", meta=(ClampMin="80.0", UIMin="80.0")) float WorkerAttackRange = 150.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Progression|Stage1", meta=(ClampMin="0.25", UIMin="0.25")) float WorkerAttackCooldown = 1.75f;
 
 private:
     float AttackCooldownRemaining = 0.0f;
+    float WorkerAttackCooldownRemaining = 0.0f;
     bool bStageObjectiveReported = false;
 };
