@@ -13,6 +13,7 @@ class UALSAEQALegacyComponent;
 class UALSAEQARidingComponent;
 class UALSAEQAVisualAssetComponent;
 class UALSAEQACinematicDirector;
+class UALSAEQAProgressionComponent;
 class UALSAEQAStageFlowComponent;
 class UALSAEQAStageObjectiveComponent;
 class USpringArmComponent;
@@ -48,6 +49,7 @@ public:
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Legacy") UALSAEQALegacyComponent* GetLegacyComponent() const { return LegacyComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Visual") UALSAEQAVisualAssetComponent* GetVisualAssetComponent() const { return VisualAssetComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Cinematics") UALSAEQACinematicDirector* GetCinematicDirector() const { return CinematicDirector; }
+    UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression") UALSAEQAProgressionComponent* GetProgressionComponent() const { return ProgressionComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression|Flow") UALSAEQAStageFlowComponent* GetStageFlowComponent() const { return StageFlowComponent; }
     UFUNCTION(BlueprintPure, Category="ALSAEQA|Progression|Objectives") UALSAEQAStageObjectiveComponent* GetStageObjectiveComponent() const { return StageObjectiveComponent; }
 
@@ -83,6 +85,7 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQARidingComponent> RidingComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAVisualAssetComponent> VisualAssetComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQACinematicDirector> CinematicDirector;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAProgressionComponent> ProgressionComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAStageFlowComponent> StageFlowComponent;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ALSAEQA|Components") TObjectPtr<UALSAEQAStageObjectiveComponent> StageObjectiveComponent;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Movement") float WalkSpeed = 360.0f;
