@@ -9,12 +9,6 @@ This is the persistent handoff record for continuing ALSAEQA across chat session
 - Primary target: Android
 - One continuous canonical project; no V1/V2/V3 forks; no primitive placeholders.
 
-## Documentation sources
-- `Docs/ALSAEQA_MASTER_PROJECT_BIBLE.md` — master project bible and complete stage 1–70 documentation.
-- `Docs/COMPLETE_ADVENTURE_STAGE_ROADMAP_1_70.md` — original detailed 1–70 roadmap.
-- `Docs/DEVELOPMENT_RULES.md` — repository and engineering rules.
-- This file — persistent current-state handoff.
-
 ## Story canon
 Hero is from the Thunder Giants family/bloodline, not literal giants. The family ruled medieval realms and possessed extraordinary thunder abilities. An evil force attacked the Thunder Kingdom to control the world/resources. Hero was about 4–5; father and brother were killed, mother hid him behind a chest/box, and mother/surviving siblings were captured. Hero escaped the attackers but was later captured by a **different** group of slavers. He grew up in mine/quarry forced labor, dirty/wounded/scarred and in ragged clothing with a believable athletic/average-fit body. A mine collapse led to a deep hole, relic, body-mark reaction and inherited thunder awakening. First ability is survival/traversal-oriented. He initially does not know his lineage or true name; **الصاعقة / Alsaeqa** is the canonical name recovered gradually. Hero is 22 in the main playable era. Appearance, clothing, armor, scars, weapons and powers evolve gradually.
 
@@ -39,31 +33,32 @@ Hard rules: connected revisitable world; automatic story-driven stage transition
 - Progression validation and saved-stage handling.
 - Automatic stage-flow component with delayed transition.
 - Stage objective component with progress/completion/finalization.
-- Stage 1 default objectives: `RescueWorkers` = 1 and `DefeatSlavers` = 1.
+- Stage 1 is a **group rescue in the mine**: five separate worker/prisoner actors are required by the default `RescueWorkers` objective; one worker alone cannot complete the stage.
+- Stage 1 default objectives: `RescueWorkers` = 5 and `DefeatSlavers` = 1.
 - Real slaver death linkage: only enemies explicitly marked `bCountsAsStageOneSlaver` report `DefeatSlavers`, and each enemy reports at most once.
-- Real worker/prisoner rescue actor: `AALSAEQAWorkerPrisonerActor`; stage-1 rescues report `RescueWorkers` once per worker and fire the Rescue cinematic story beat.
+- Real worker/prisoner rescue actor: `AALSAEQAWorkerPrisonerActor`; each rescued worker reports +1 exactly once and fires the Rescue cinematic story beat.
 - Player `Interact` action now finds the nearest forward-facing interactable within 240 units; `Config/DefaultInput.ini` maps it to `E`.
 - Automatic stage transition now fires a dedicated `StageTransition` cinematic story beat after the progression/save update.
-- Cinematic director exposes `HandleStoryBeat` as a Blueprint implementation point, so the transition/rescue beats can drive authored camera/Sequencer presentation rather than being data-only events.
+- Cinematic director exposes `HandleStoryBeat` as a Blueprint implementation point, so rescue and transition beats can drive authored camera/Sequencer presentation rather than being data-only events.
 - Cinematic director action moments for heavy combat and high-charge thunder.
 - Hero integration with stage flow/objectives.
 - Real-asset release/import documentation and primitive-fallback prohibition.
-- Master project bible with full project and stage documentation.
 
 ## Engineering queue
-1. Data-drive later stage objectives.
-2. Animation-notify-driven melee hit windows.
-3. Real climb/ledge traversal and animation/IK fall rescue.
-4. Wind reactions for foliage/cloth/hair/sand.
-5. Complete ThunderBeast Crossing, Sense and correct Storm Charge semantics.
-6. Complete companion AI/combat/rescue/persistence.
-7. Dialogue/quest/event orchestration and Sequencer story events.
-8. Save persistence for story, companion, rescue, discoveries and mounts.
-9. Import/match real final assets; never replace with primitives.
-10. Android optimization/package/build verification when UE 5.8 build hardware exists.
+1. Turn the five-worker rescue into a fully authored mine sequence: distributed worker locations, cages/chains, varied rescue interactions and a coordinated enemy response.
+2. Data-drive later stage objectives.
+3. Animation-notify-driven melee hit windows.
+4. Real climb/ledge traversal and animation/IK fall rescue.
+5. Wind reactions for foliage/cloth/hair/sand.
+6. Complete ThunderBeast Crossing, Sense and correct Storm Charge semantics.
+7. Complete companion AI/combat/rescue/persistence.
+8. Dialogue/quest/event orchestration and Sequencer story events.
+9. Save persistence for story, companion, rescue, discoveries and mounts.
+10. Import/match real final assets; never replace with primitives.
+11. Android optimization/package/build verification when UE 5.8 build hardware exists.
 
 ## Stage 1 runtime chain
-`WorkerPrisoner.Interact/Rescue` → `StageObjective.RegisterProgress("RescueWorkers")` + Rescue cinematic event.
+Five distinct `WorkerPrisoner` actors → each `Interact/Rescue` → `StageObjective.RegisterProgress("RescueWorkers", 1)` → progress 1/5 … 5/5.
 
 `Player.Interact (E)` → nearest `AALSAEQAInteractable` in front of hero → worker rescue.
 
