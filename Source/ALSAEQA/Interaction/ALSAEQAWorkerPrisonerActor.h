@@ -56,6 +56,7 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue", meta=(ClampMin="50.0", UIMin="50.0")) float RescueThreatRadius = 260.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue", meta=(ClampMin="50.0", UIMin="50.0")) float EscapeSpeed = 240.0f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue", meta=(ClampMin="50.0", UIMin="50.0")) float SafePointRadius = 90.0f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="ALSAEQA|Rescue", meta=(ClampMin="0.1", UIMin="0.1")) float GuardPressurePause = 0.75f;
 
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Rescue") FALSAEQAWorkerRescuedSignature OnWorkerRescued;
     UFUNCTION(BlueprintImplementableEvent, Category="ALSAEQA|Rescue") void PlayRescuePresentation(EALSAEQAWorkerRescueMethod Method, FName SequenceTag);
@@ -80,4 +81,5 @@ private:
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Rescue", meta=(AllowPrivateAccess="true")) bool bRescued = false;
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Rescue", meta=(AllowPrivateAccess="true")) bool bRescueInProgress = false;
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Rescue", meta=(AllowPrivateAccess="true")) EALSAEQAWorkerRescueState RescueState = EALSAEQAWorkerRescueState::Captive;
+    float GuardPressurePauseRemaining = 0.0f;
 };
