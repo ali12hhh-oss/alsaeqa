@@ -52,6 +52,7 @@ public:
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Injury") FALSAEQAInjuryHitReaction OnHitReaction;
     UPROPERTY(BlueprintAssignable, Category="ALSAEQA|Injury") FALSAEQAInjuryFatalState OnFatalState;
 protected:
+    virtual void BeginPlay() override;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury") float KnockoutThreshold = 0.90f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury") float CriticalThreshold = 0.75f;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ALSAEQA|Injury|Visual") bool bAutoHideSeveredLimbBones = true;
@@ -66,6 +67,7 @@ protected:
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Injury") TSet<EALSAEQAInjuryBodyPart> SeveredLimbs;
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="ALSAEQA|Injury") EALSAEQAInjuryState State = EALSAEQAInjuryState::Healthy;
 private:
+    float BaseWalkSpeed = 0.0f;
     void RecalculateState();
     void ApplyOwnerStatePresentation();
     void ApplySeveredLimbVisual(EALSAEQAInjuryBodyPart BodyPart);
