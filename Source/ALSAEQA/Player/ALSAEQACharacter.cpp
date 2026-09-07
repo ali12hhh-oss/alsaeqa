@@ -63,3 +63,326 @@ void AALSAEQACharacter::BeginPlay()
         HealthComponent->OnDeath.AddDynamic(this, &AALSAEQACharacter::HandlePlayerDeath);
     }
 }
+
+void AALSAEQACharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
+    PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AALSAEQACharacter::MoveForward);
+    PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AALSAEQACharacter::MoveRight);
+    PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AALSAEQACharacter::LookUp);
+    PlayerInputComponent->BindAxis(TEXT("Turn"), this, &AALSAEQACharacter::Turn);
+    PlayerInputComponent->BindAction(TEXT("LightAttack"), IE_Pressed, this, &AALSAEQACharacter::PerformLightAttack);
+    PlayerInputComponent->BindAction(TEXT("HeavyAttack"), IE_Pressed, this, &AALSAEQACharacter::PerformHeavyAttack);
+    PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Pressed, this, &AALSAEQACharacter::StartSprint);
+    PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Released, this, &AALSAEQACharacter::StopSprint);
+    PlayerInputComponent->BindAction(TEXT("Mount"), IE_Pressed, this, &AALSAEQACharacter::MountOrDismount);
+    PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Pressed, this, &AALSAEQACharacter::BeginThunderCharge);
+    PlayerInputComponent->BindAction(TEXT("ThunderCharge"), IE_Released, this, &AALSAEQACharacter::ReleaseThunderCharge);
+    PlayerInputComponent->BindAction(TEXT("MountLightningDash"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningDash);
+    PlayerInputComponent->BindAction(TEXT("MountThunderRoar"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountThunderRoar);
+    PlayerInputComponent->BindAction(TEXT("MountLightningKick"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningKick);
+    PlayerInputComponent->BindAction(TEXT("MountStormCharge"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormCharge);
+    PlayerInputComponent->BindAction(TEXT("MountLightningCrossing"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningCrossing);
+    PlayerInputComponent->BindAction(TEXT("MountStormLeap"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormLeap);
+    PlayerInputComponent->BindAction(TEXT("MountLightningShield"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountLightningShield);
+    PlayerInputComponent->BindAction(TEXT("MountStormSummon"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormSummon);
+    PlayerInputComponent->BindAction(TEXT("MountThunderSense"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountThunderSense);
+    PlayerInputComponent->BindAction(TEXT("MountStormMode"), IE_Pressed, this, &AALSAEQACharacter::ActivateMountStormMode);
+}
+
+void AALSAEQACharacter::MoveForward(float Value)
+{
+    if (bDeathInProgress) return;
+    if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->MoveForward(Value); return; }
+    if (Controller && !FMath::IsNearlyZero(Value))
+    {
+        const FRotator R(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
+        AddMovementInput(FRotationMatrix(R).GetUnitAxis(EAxis::X), Value);
+    }
+}
+
+void AALSAEQACharacter::MoveRight(float Value)
+{
+    if (bDeathInProgress) return;
+    if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->MoveRight(Value); return; }
+    if (Controller && !FMath::IsNearlyZero(Value))
+    {
+        const FRotator R(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
+        AddMovementInput(FRotationMatrix(R).GetUnitAxis(EAxis::Y), Value);
+    }
+}
+
+void AALSAEQACharacter::LookUp(float Value) { if (!bDeathInProgress) AddControllerPitchInput(Value); }
+void AALSAEQACharacter::Turn(float Value) { if (!bDeathInProgress) AddControllerYawInput(Value); }
+
+void AALSAEQACharacter::StartSprint()
+{
+    if (bDeathInProgress) return;
+    if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->SetSprint(true); return; }
+    GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+}
+
+void AALSAEQACharacter::StopSprint()
+{
+    if (RidingComponent && RidingComponent->IsRiding()) { RidingComponent->SetSprint(false); return; }
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+bool AALSAEQACharacter::IsRiding() const { return RidingComponent && RidingComponent->IsRiding(); }
+bool AALSAEQACharacter::DismountCurrentMount() { return RidingComponent && RidingComponent->Dismount(); }
+
+bool AALSAEQACharacter::MountNearestTamedMount()
+{
+    if (bDeathInProgress || !RidingComponent || RidingComponent->IsRiding()) return false;
+    UWorld* World = GetWorld();
+    if (!World) return false;
+    AALSAEQAMountActor* BestMount = nullptr;
+    float BestDistanceSquared = FMath::Square(MountSearchRadius);
+    for (TActorIterator<AALSAEQAMountActor> It(World); It; ++It)
+    {
+        AALSAEQAMountActor* Mount = *It;
+        if (!IsValid(Mount) || !Mount->GetMountComponent() || !Mount->GetMountComponent()->HasTamedMount() || Mount->HasRider()) continue;
+        const float DistanceSquared = FVector::DistSquared(GetActorLocation(), Mount->GetActorLocation());
+        if (DistanceSquared <= BestDistanceSquared) { BestDistanceSquared = DistanceSquared; BestMount = Mount; }
+    }
+    return BestMount && RidingComponent->TryMount(BestMount);
+}
+
+bool AALSAEQACharacter::MountOrDismount() { return IsRiding() ? DismountCurrentMount() : MountNearestTamedMount(); }
+
+bool AALSAEQACharacter::ActivateMountAbility(EALSAEQAMountAbility Ability)
+{
+    if (bDeathInProgress || !RidingComponent || !RidingComponent->IsRiding()) return false;
+    AALSAEQAMountActor* Mount = RidingComponent->GetCurrentMount();
+    UALSAEQAMountAbilityComponent* Abilities = Mount ? Mount->GetMountAbilityComponent() : nullptr;
+    return Abilities && Abilities->TryActivate(Ability);
+}
+
+void AALSAEQACharacter::ActivateMountLightningDash() { ActivateMountAbility(EALSAEQAMountAbility::LightningDash); }
+void AALSAEQACharacter::ActivateMountThunderRoar() { ActivateMountAbility(EALSAEQAMountAbility::ThunderRoar); }
+void AALSAEQACharacter::ActivateMountLightningKick() { ActivateMountAbility(EALSAEQAMountAbility::LightningKick); }
+void AALSAEQACharacter::ActivateMountStormCharge() { ActivateMountAbility(EALSAEQAMountAbility::StormCharge); }
+void AALSAEQACharacter::ActivateMountLightningCrossing() { ActivateMountAbility(EALSAEQAMountAbility::LightningCrossing); }
+void AALSAEQACharacter::ActivateMountStormLeap() { ActivateMountAbility(EALSAEQAMountAbility::StormLeap); }
+void AALSAEQACharacter::ActivateMountLightningShield() { ActivateMountAbility(EALSAEQAMountAbility::LightningShield); }
+void AALSAEQACharacter::ActivateMountStormSummon() { ActivateMountAbility(EALSAEQAMountAbility::StormSummon); }
+void AALSAEQACharacter::ActivateMountThunderSense() { ActivateMountAbility(EALSAEQAMountAbility::ThunderSense); }
+void AALSAEQACharacter::ActivateMountStormMode() { ActivateMountAbility(EALSAEQAMountAbility::StormMode); }
+
+bool AALSAEQACharacter::PerformMeleeStrike(bool bHeavy)
+{
+    if (bDeathInProgress || !MeleeCombatComponent) return false;
+    const bool bStarted = bHeavy ? MeleeCombatComponent->HeavyAttack() : MeleeCombatComponent->LightAttack();
+    if (!bStarted) return false;
+
+    if (CinematicDirector && bHeavy)
+    {
+        FALSAEQACinematicRequest Moment;
+        Moment.Event = EALSAEQACinematicEvent::CombatFinisher;
+        Moment.SlowMotionScale = 0.35f;
+        Moment.Duration = 0.75f;
+        CinematicDirector->PlayActionMoment(Moment);
+    }
+
+    UWorld* World = GetWorld();
+    if (!World) return true;
+    const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 45.0f);
+    const FVector End = Start + GetActorForwardVector() * MeleeAttackRange;
+    const FCollisionShape Shape = FCollisionShape::MakeSphere(MeleeAttackRadius);
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(ALSAEQAMeleeStrike), false, this);
+    Params.AddIgnoredActor(this);
+    FCollisionObjectQueryParams ObjectTypes;
+    ObjectTypes.AddObjectTypesToQuery(ECC_Pawn);
+    TArray<FHitResult> Hits;
+    World->SweepMultiByObjectType(Hits, Start, End, FQuat::Identity, ObjectTypes, Shape, Params);
+    TSet<AActor*> Damaged;
+    const float Damage = bHeavy ? MeleeCombatComponent->HeavyDamage : MeleeCombatComponent->LightDamage;
+    for (const FHitResult& Hit : Hits)
+    {
+        AActor* Target = Hit.GetActor();
+        if (!IsValid(Target) || Damaged.Contains(Target)) continue;
+        if (MeleeCombatComponent->TryHitActor(Target, Damage, EALSAEQADamageType::Physical)) Damaged.Add(Target);
+    }
+    return true;
+}
+
+void AALSAEQACharacter::PerformLightAttack() { PerformMeleeStrike(false); }
+void AALSAEQACharacter::PerformHeavyAttack() { PerformMeleeStrike(true); }
+
+void AALSAEQACharacter::BeginThunderCharge()
+{
+    if (!bDeathInProgress && ThunderChargeComponent && AbilityComponent && AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock)) ThunderChargeComponent->BeginCharge();
+}
+
+int32 AALSAEQACharacter::ApplyThunderReleaseToTargets(float Damage)
+{
+    UWorld* World = GetWorld();
+    if (!World || Damage <= 0.0f) return 0;
+    float StormMultiplier = 1.0f;
+    if (UALSAEQADynamicStormSubsystem* Storm = World->GetSubsystem<UALSAEQADynamicStormSubsystem>()) StormMultiplier = Storm->GetThunderMultiplier();
+    const float FinalDamage = Damage * StormMultiplier;
+    const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, 45.0f);
+    const FVector End = Start + GetActorForwardVector() * ThunderAttackRange;
+    const FCollisionShape Shape = FCollisionShape::MakeSphere(ThunderAttackRadius);
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(ALSAEQAThunderRelease), false, this);
+    Params.AddIgnoredActor(this);
+    FCollisionObjectQueryParams ObjectTypes;
+    ObjectTypes.AddObjectTypesToQuery(ECC_Pawn);
+    ObjectTypes.AddObjectTypesToQuery(ECC_WorldDynamic);
+    TArray<FHitResult> Hits;
+    World->SweepMultiByObjectType(Hits, Start, End, FQuat::Identity, ObjectTypes, Shape, Params);
+    TSet<AActor*> DamagedActors;
+    int32 HitCount = 0;
+    for (const FHitResult& Hit : Hits)
+    {
+        AActor* Target = Hit.GetActor();
+        if (!IsValid(Target) || DamagedActors.Contains(Target)) continue;
+        const FVector HitLocation = Hit.ImpactPoint.IsNearlyZero() ? Target->GetActorLocation() : Hit.ImpactPoint;
+        if (Target->GetClass()->ImplementsInterface(UALSAEQADamageReceiver::StaticClass()))
+        {
+            FALSAEQADamageInfo DamageInfo;
+            DamageInfo.Amount = FinalDamage; DamageInfo.Type = EALSAEQADamageType::Thunder; DamageInfo.Instigator = this; DamageInfo.HitLocation = HitLocation;
+            IALSAEQADamageReceiver::Execute_ReceiveALSAEQADamage(Target, DamageInfo);
+            DamagedActors.Add(Target); ++HitCount; continue;
+        }
+        TArray<UALSAEQAThunderEnvironmentComponent*> EnvironmentComponents;
+        Target->GetComponents<UALSAEQAThunderEnvironmentComponent>(EnvironmentComponents);
+        for (UALSAEQAThunderEnvironmentComponent* Environment : EnvironmentComponents)
+        {
+            if (!IsValid(Environment)) continue;
+            FALSAEQADamageInfo ThunderInfo;
+            ThunderInfo.Amount = FinalDamage; ThunderInfo.Type = EALSAEQADamageType::Thunder; ThunderInfo.Instigator = this; ThunderInfo.HitLocation = HitLocation;
+            if (Environment->ReceiveThunder(ThunderInfo)) { DamagedActors.Add(Target); ++HitCount; break; }
+        }
+    }
+    return HitCount;
+}
+
+void AALSAEQACharacter::ReleaseThunderCharge()
+{
+    if (bDeathInProgress || !ThunderChargeComponent || !AbilityComponent || !AbilityComponent->HasAbility(EALSAEQAAbility::ThunderShock)) return;
+    const float ChargePercent = ThunderChargeComponent->GetChargePercent();
+    const float Multiplier = ThunderChargeComponent->GetDamageMultiplier();
+    constexpr float MinimumCharge = 0.15f;
+    constexpr float ThunderShockCost = 12.0f;
+    if (ChargePercent < MinimumCharge || Multiplier <= 0.0f || !AbilityComponent->ConsumeEnergy(ThunderShockCost))
+    {
+        ThunderChargeComponent->CancelCharge(); return;
+    }
+    const float ReleasedPercent = ThunderChargeComponent->ReleaseCharge();
+    if (ReleasedPercent <= 0.0f) return;
+    ApplyThunderReleaseToTargets(ThunderReleaseDamage * Multiplier);
+
+    if (CinematicDirector && ReleasedPercent >= 0.85f)
+    {
+        FALSAEQACinematicRequest Moment;
+        Moment.Event = EALSAEQACinematicEvent::AbilityImpact;
+        Moment.SlowMotionScale = 0.22f;
+        Moment.Duration = 1.15f;
+        CinematicDirector->PlayActionMoment(Moment);
+    }
+}
+
+void AALSAEQACharacter::CancelThunderCharge()
+{
+    if (ThunderChargeComponent) ThunderChargeComponent->CancelCharge();
+}
+
+bool AALSAEQACharacter::ActivateAbility(EALSAEQAAbility Ability)
+{
+    return !bDeathInProgress && AbilityComponent && AbilityComponent->TryActivateAbility(Ability);
+}
+
+void AALSAEQACharacter::HandlePlayerDeath()
+{
+    if (bDeathInProgress || !IsValid(this)) return;
+    bDeathInProgress = true;
+
+    if (GetWorld())
+    {
+        GetWorld()->GetTimerManager().ClearTimer(RespawnTimerHandle);
+    }
+
+    if (RidingComponent && RidingComponent->IsRiding())
+    {
+        RidingComponent->Dismount();
+    }
+    if (ThunderChargeComponent)
+    {
+        ThunderChargeComponent->CancelCharge();
+    }
+
+    StopJumping();
+    if (GetCharacterMovement())
+    {
+        GetCharacterMovement()->StopMovementImmediately();
+        GetCharacterMovement()->DisableMovement();
+    }
+    SetActorEnableCollision(false);
+    if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+    {
+        DisableInput(PlayerController);
+    }
+
+    if (GetWorld())
+    {
+        GetWorld()->GetTimerManager().SetTimer(
+            RespawnTimerHandle,
+            this,
+            &AALSAEQACharacter::RespawnAtCheckpoint,
+            FMath::Max(0.1f, DeathRespawnDelay),
+            false);
+    }
+}
+
+void AALSAEQACharacter::RespawnAtCheckpoint()
+{
+    if (!IsValid(this)) return;
+
+    UALSAEQASaveManager* SaveManager = nullptr;
+    if (UGameInstance* GameInstance = GetGameInstance())
+    {
+        SaveManager = GameInstance->GetSubsystem<UALSAEQASaveManager>();
+    }
+
+    FALSAEQACheckpointData Checkpoint;
+    bool bHasCheckpoint = false;
+    if (SaveManager)
+    {
+        Checkpoint = SaveManager->GetLastCheckpoint();
+        bHasCheckpoint = !Checkpoint.CheckpointId.IsNone();
+        if (bHasCheckpoint)
+        {
+            SaveManager->RespawnAtLastCheckpoint();
+        }
+    }
+
+    if (bHasCheckpoint)
+    {
+        SetActorLocationAndRotation(Checkpoint.PlayerLocation, Checkpoint.PlayerRotation, false, nullptr, ETeleportType::TeleportPhysics);
+    }
+
+    if (GetCharacterMovement())
+    {
+        GetCharacterMovement()->StopMovementImmediately();
+        GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    }
+
+    SetActorEnableCollision(true);
+    if (HealthComponent)
+    {
+        HealthComponent->ResetHealth();
+    }
+
+    if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+    {
+        EnableInput(PlayerController);
+        if (bHasCheckpoint)
+        {
+            PlayerController->SetControlRotation(Checkpoint.PlayerRotation);
+        }
+    }
+
+    bDeathInProgress = false;
+}
