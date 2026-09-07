@@ -2,6 +2,7 @@
 
 No primitives, placeholders, procedural meshes, or fake final art are created.
 """
+import json
 import os
 import re
 import unreal
@@ -28,7 +29,7 @@ def main():
 
     with open(SOURCE_ROOTS_FILE, "r", encoding="utf-8-sig") as handle:
         source_roots = json.load(handle)
-    source_roots = [p for p in source_roots if os.path.isdir(p)]
+    source_roots = [p for p in source_roots if isinstance(p, str) and os.path.isdir(p)]
     if not source_roots:
         raise RuntimeError("No extracted authored-art source roots were found.")
 
