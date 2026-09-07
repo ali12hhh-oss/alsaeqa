@@ -3,6 +3,7 @@
 #include "Progression/ALSAEQAProgressionComponent.h"
 #include "Progression/ALSAEQAProgressionStageRegistry.h"
 #include "Save/ALSAEQASaveManager.h"
+#include "Cinematic/ALSAEQACinematicDirector.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
@@ -117,6 +118,17 @@ void UALSAEQAStageFlowComponent::ApplyPendingTransition()
             if (UALSAEQASaveManager* SaveManager = GetWorld()->GetGameInstance()->GetSubsystem<UALSAEQASaveManager>())
             {
                 SaveManager->SetStage(NextStage);
+            }
+        }
+
+        // The stage change is a real authored story beat, not a menu action.
+        // Blueprints/Sequencer can bind to this event to play the short
+        // transition shot before the next stage takes over.
+        if (AActor* Owner = GetOwner())
+        {
+            if (UALSAEQACinematicDirector* Cinematic = Owner->FindComponentByClass<UALSAEQACinematicDirector>())
+            {
+                Cinematic->StartStoryBeat(EALSAEQACinematicEvent::StageTransition);
             }
         }
 
